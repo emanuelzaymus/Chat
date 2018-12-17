@@ -4,9 +4,17 @@ int Client::sockfd = 0;
 int Client::n = 0;
 char Client::buffer[256] = {0};
 
-Client::Client(char *argv[])
+bool Client::running = true;
+
+pthread_t Client::reading;
+pthread_t Client::writing;
+
+pthread_mutex_t Client::mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t Client::cond = PTHREAD_COND_INITIALIZER;
+
+Client::Client(const char* hostName, int port)
 {
-    server = gethostbyname(argv[1]);
+    server = gethostbyname(hostName);
     if (server == NULL)
     {
         fprintf(stderr, "Error, no such host\n");
@@ -19,7 +27,7 @@ Client::Client(char *argv[])
           (char*) &serv_addr.sin_addr.s_addr,
           server->h_length
           );
-    serv_addr.sin_port = htons(atoi(argv[2]));
+    serv_addr.sin_port = htons(port);
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
@@ -32,69 +40,68 @@ Client::Client(char *argv[])
         perror("Error connecting to socket");
     }
 
+    pthread_mutex_init(&mutex, NULL);
+    pthread_cond_init(&cond, NULL);
+
     pthread_create(&reading, NULL, &readMsg, NULL);
     pthread_create(&writing, NULL, &writeMsg, NULL);
 }
 
-Client::Client(const Client& orig)
-{
-}
-
 Client::~Client()
 {
+    //    std::cout << "in client destructor - start" << std::endl;
     pthread_join(reading, NULL);
     pthread_join(writing, NULL);
 
-    printf("%s\n", buffer);
+    pthread_cond_destroy(&cond);
+    pthread_mutex_destroy(&mutex);
+
     close(sockfd);
+    //    std::cout << "in client destructor - end" << std::endl;
 }
 
 void* Client::readMsg(void* ptr)
 {
-    while (true)
+    while (running)
     {
-        bzero(Client::buffer, 256);
-        printf("7");
-
-        n = read(Client::sockfd, Client::buffer, 255);
-        printf("8");
-        printf("Here is the message: %s\n", Client::buffer);
-        printf("9");
+        bzero(buffer, 256);
+        n = read(sockfd, buffer, 255);
 
         if (n < 0)
         {
             perror("Error reading from socket");
         }
-    }
 
+        std::cout << "Server: " << buffer;
+    }
+    std::cout << "end of readMsg method" << std::endl;
     return nullptr;
 }
 
 void* Client::writeMsg(void* ptr)
 {
-    while (true)
+    while (running)
     {
-        printf("1");
+        std::cout << "You: ";
 
-        printf("Please enter a message: ");
-        printf("2");
-
-        bzero(Client::buffer, 256);
-        printf("3");
-
-        fgets(Client::buffer, 255, stdin);
-        printf("4");
-
-
-        n = write(Client::sockfd, Client::buffer, strlen(Client::buffer));
-        printf("5");
+        bzero(buffer, 256);
+        fgets(buffer, 255, stdin);
+        if (strcmp(buffer, "end\n") == 0)
+        {
+            disconnect();
+        }
+        n = write(sockfd, buffer, strlen(buffer));
 
         if (n < 0)
         {
             perror("Error writing to socket");
         }
-        printf("6");
     }
-
+    std::cout << "end of writeMsg method" << std::endl;
     return nullptr;
+}
+
+void Client::disconnect()
+{
+    running = false;
 }

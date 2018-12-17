@@ -9,32 +9,42 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <iostream>
+#include <vector>
 
-//namespace ServerSite {
+using namespace std;
 
-    class Server {
-    public:
-        Server(char *argv[]);
-        Server(const Server& orig);
-        virtual ~Server();
+struct client {
+    int newsockfd;
+    int index;
+    char buffer[256] = "";
+    bool runningThread = true;
+};
 
-    private:
-        static int newsockfd;
-        static int n;
-        static char buffer[256];
+class Server {
+public:
+    Server(int port);
+    virtual ~Server();
 
-        int sockfd;
-        socklen_t cli_len;
-        struct sockaddr_in serv_addr, cli_addr;
+private:
+    static vector<struct client> clients;
+    static int sockfd;
+    static socklen_t cli_len;
+    static struct sockaddr_in cli_addr;
 
-        pthread_t reading;
-        pthread_t writing;
+    static bool running;
 
-        static void* readMsg(void* ptr);
-        static void* writeMsg(void* ptr);
+    struct sockaddr_in serv_addr;
 
-    };
+    pthread_t connecting;
+    static pthread_t reading[256]; // todo give it to the struct (vector)
+    static pthread_t writing[256]; // todo give it to the struct (vector)
 
-//}
+    static void* connectClient(void* ptr);
+    static void disconnectClient(struct client cl);
+    static void* readMsg(void* ptr);
+    static void* writeMsg(void* ptr);
+};
+
 #endif /* SERVER_H */
 

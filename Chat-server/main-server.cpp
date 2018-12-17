@@ -1,7 +1,5 @@
 #include "Server.h"
 
-//using namespace ServerSite;
-
 int main(int argc, char *argv[])
 {
 
@@ -11,7 +9,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    Server s(argv);
+    Server s(atoi(argv[1]));
 
 
     return 0;

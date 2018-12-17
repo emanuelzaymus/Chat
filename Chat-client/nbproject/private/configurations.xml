@@ -13,6 +13,8 @@
         <gdb_interceptlist>
           <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
         </gdb_interceptlist>
+        <gdb_signals>
+        </gdb_signals>
         <gdb_options>
           <DebugOptions>
           </DebugOptions>
@@ -32,8 +34,9 @@
           <runcommandpicklistitem>"${OUTPUT_PATH}" "zaymus1@frios2.fri.uniza.sk" 1043</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1043</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1044</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1045</runcommandpicklistitem>
         </runcommandpicklist>
-        <runcommand>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1044</runcommand>
+        <runcommand>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1045</runcommand>
         <rundir></rundir>
         <buildfirst>true</buildfirst>
         <terminal-type>0</terminal-type>
