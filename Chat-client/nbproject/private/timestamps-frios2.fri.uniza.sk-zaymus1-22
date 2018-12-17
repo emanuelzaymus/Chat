@@ -1,12 +1,24 @@
-#Sat Dec 15 21:24:30 CET 2018
-c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\main-client.cpp=c1544905445724
-c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\makefile=c1544863947717
-c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\makefile-release.mk=c1544864041948
-c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\package-debug.bash=c1544863947120
-c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\package-release.bash=c1544863947146
-c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\project.xml=c1544864042008
-c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\makefile-debug.mk=c1544903998693
+#Mon Dec 17 13:47:10 CET 2018
 c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\makefile-impl.mk=c1544863947074
-c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\private\\makefile-variables.mk=c1544863947164
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\client.cpp=c1545050555836
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\nbproject\\makefile-impl.mk=c1544863947074
 c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\makefile-variables.mk=c1544863947155
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\nbproject\\private\\makefile-variables.mk=c1544863947164
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\makefile-release.mk=c1544864041948
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\nbproject\\makefile-variables.mk=c1544863947155
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\nbproject\\package-release.bash=c1544863947146
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\main-client.cpp=c1544905445724
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\nbproject\\package-debug.bash=c1544863947120
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\project.xml=c1544864042008
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\makefile=c1544863947717
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\package-debug.bash=c1544863947120
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\makefile=c1544863947717
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\nbproject\\makefile-release.mk=c1545049616097
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\makefile-debug.mk=c1544903998693
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\package-release.bash=c1544863947146
 VERSION=1.3
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\client.h=c1545050247003
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\main-client.cpp=c1545050810963
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\nbproject\\project.xml=c1545049615861
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat-client\\nbproject\\private\\makefile-variables.mk=c1544863947164
+c\:\\users\\3m0\\documents\\netbeansprojects\\chat\\chat-client\\nbproject\\makefile-debug.mk=c1545049616059
