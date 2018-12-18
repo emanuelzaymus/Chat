@@ -32,7 +32,7 @@ public:
 private:
     static int maxId;
     
-    static vector<struct client> clients;
+    static vector<struct client*> clients;
     static int sockfd;
     static socklen_t cli_len;
     static struct sockaddr_in cli_addr;
@@ -47,7 +47,7 @@ private:
     static void* connectClient(void* ptr);
     static void stopClient(struct client* cl);
     static void* runClient(void* ptr);
-    static void* readMsg(void* ptr);    // todo rename to service
+    static void* service(void* ptr);
     static void* readConsole(void* ptr);
     
     static void stopServer();

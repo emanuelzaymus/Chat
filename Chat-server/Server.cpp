@@ -4,7 +4,7 @@
 
 int Server::maxId = 0;
 
-vector<struct client> Server::clients;
+vector<struct client*> Server::clients;
 int Server::sockfd = 0;
 socklen_t Server::cli_len = 0;
 struct sockaddr_in Server::cli_addr = {0};
@@ -36,17 +36,12 @@ Server::Server(int port)
 
 Server::~Server()
 {
-    cout << "in server destructor - start" << endl;
-
-
     close(sockfd);
-
-    cout << "in server destructor - end" << endl;
 }
 
 void Server::run()
 {
-    cout << "start running server" << endl;
+    cout << " - - - SERVER STARTED - - - " << endl;
 
     pthread_create(&consoleReader, NULL, &readConsole, NULL);
     pthread_create(&connecting, NULL, &connectClient, NULL);
@@ -56,16 +51,17 @@ void Server::run()
 
     stopAllClients();
 
-    struct client cl;
+    struct client* cl;
     while (clients.size() != 0)
     {
         cl = clients.back();
-        pthread_join(cl.running, NULL);
-        close(cl.newsockfd);
+        pthread_join(cl->running, NULL);
+        close(cl->newsockfd);
         clients.pop_back();
+        delete cl;
     }
 
-    cout << "end running server" << endl;
+    cout << " - - - SERVER STOPPED - - - " << endl;
 }
 
 void* Server::connectClient(void* ptr)
@@ -78,13 +74,14 @@ void* Server::connectClient(void* ptr)
         {
             perror("ERROR on accept");
         }
-        struct client c;
-        c.newsockfd = newSockfd;
-        c.id = maxId++;
+        struct client* c = new struct client();
+        c->newsockfd = newSockfd;
+        c->id = maxId++;
         clients.push_back(c);
 
-        pthread_create(&(clients.back().running), NULL, &runClient, &clients.back());
-        cout << "connectClient - created client " << c.id << endl;
+        pthread_create(&c->running, NULL, &runClient, c);
+        //        pthread_create(&(clients.back().running), NULL, &runClient, &clients.back());
+        cout << "SERVER - Client " << c->id << " connected" << endl;
     }
     return nullptr;
 }
@@ -101,52 +98,51 @@ void Server::stopClient(struct client* cl)
         cl->buffer[4] = '\n';
 
         write(cl->newsockfd, cl->buffer, strlen(cl->buffer) + 1);
+        bzero(cl->buffer, 256);
         cl->runningThreads = false;
 
-        cout << "client " << cl->id << " - stopped" << endl;
+        cout << "SERVER - Client " << cl->id << " stopped" << endl;
     }
 }
 
 void* Server::runClient(void* ptr)
 {
-    struct client cl = *((struct client*) ptr);
-    int id = cl.id;
+    struct client* cl = (struct client*) ptr;
+    int id = cl->id;
 
-    cout << "start running client " << cl.id << endl;
+    pthread_create(&cl->reading, NULL, &service, cl);
 
-    pthread_create(&cl.reading, NULL, &readMsg, &cl);
+    pthread_join(cl->reading, NULL);
 
-    pthread_join(cl.reading, NULL);
+    close(cl->newsockfd);
 
-    close(cl.newsockfd);
-
-    cout << "end running client " << id << endl;
+    cout << "SERVER - Client " << id << " disconnected" << endl;
 
     return nullptr;
 }
 
-void* Server::readMsg(void* ptr)
+void* Server::service(void* ptr)
 {
-    struct client cl = *((struct client*) ptr);
+    struct client* cl = (struct client*) ptr;
 
     int n;
-    while (running && cl.runningThreads)
+    while (running && cl->runningThreads)
     {
-        bzero(cl.buffer, 256);
-        n = read(cl.newsockfd, cl.buffer, 255);
+        bzero(cl->buffer, 256);
+        n = read(cl->newsockfd, cl->buffer, 255);
 
         if (n < 0)
         {
             perror("Error reading from socket");
         }
-        cout << "Client " << cl.id << ": " << cl.buffer;
+        cout << "Client " << cl->id << ": " << cl->buffer;
 
-        if (strcmp(cl.buffer, "end\n") == 0)
+        if (strcmp(cl->buffer, "end\n") == 0)
         {
-            stopClient(&cl);
+            stopClient(cl);
         }
     }
-    cout << "readMsg - ended" << endl;
+    cout << "SERVER - Ended service for client " << cl->id << endl;
     return nullptr;
 }
 
@@ -194,13 +190,13 @@ void* Server::readConsole(void* ptr)
 void Server::stopServer()
 {
     running = false;
-    cout << "server stopped !!!" << endl;
+    cout << "SERVER is being stopped..." << endl;
 }
 
 void Server::stopAllClients()
 {
     for (auto cl : clients)
     {
-        stopClient(&cl);
+        stopClient(cl);
     }
 }

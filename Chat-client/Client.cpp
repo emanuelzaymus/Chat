@@ -72,15 +72,15 @@ void* Client::readMsg(void* ptr)
             perror("Error reading from socket");
         }
 
-        cout << "Server: " << buffer;
+        cout << "SERVER: " << buffer;
         
-        if (strcmp(buffer, "STOP\n") == 0)
+        if (strcmp(buffer, "STOP\n") == 0 && running)
         {
             disconnect();
-            cout << "Server: Press Enter ..." << endl;
+            cout << "SERVER: Press Enter..." << endl;
         }
     }
-    cout << "end of readMsg method" << endl;
+    cout << "CLIENT - Ended reading service" << endl;
     return nullptr;
 }
 
@@ -102,7 +102,7 @@ void* Client::writeMsg(void* ptr)
             perror("Error writing to socket");
         }
     }
-    cout << "end of writeMsg method" << endl;
+    cout << "CLIENT - Ended writing service" << endl;
     return nullptr;
 }
 
