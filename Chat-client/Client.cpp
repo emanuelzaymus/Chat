@@ -1,7 +1,6 @@
 #include "Client.h"
 
 int Client::sockfd = 0;
-int Client::n = 0;
 char Client::buffer[256] = {0};
 
 bool Client::running = true;
@@ -9,8 +8,8 @@ bool Client::running = true;
 pthread_t Client::reading;
 pthread_t Client::writing;
 
-pthread_mutex_t Client::mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t Client::cond = PTHREAD_COND_INITIALIZER;
+//pthread_mutex_t Client::mutex = PTHREAD_MUTEX_INITIALIZER;
+//pthread_cond_t Client::cond = PTHREAD_COND_INITIALIZER;
 
 Client::Client(const char* hostName, int port)
 {
@@ -39,51 +38,57 @@ Client::Client(const char* hostName, int port)
     {
         perror("Error connecting to socket");
     }
-
-    pthread_mutex_init(&mutex, NULL);
-    pthread_cond_init(&cond, NULL);
-
-    pthread_create(&reading, NULL, &readMsg, NULL);
-    pthread_create(&writing, NULL, &writeMsg, NULL);
 }
 
 Client::~Client()
 {
-    //    std::cout << "in client destructor - start" << std::endl;
+    close(sockfd);
+}
+
+void Client::run()
+{
+//    pthread_mutex_init(&mutex, NULL);
+//    pthread_cond_init(&cond, NULL);
+
+    pthread_create(&reading, NULL, &readMsg, NULL);
+    pthread_create(&writing, NULL, &writeMsg, NULL);
+
     pthread_join(reading, NULL);
     pthread_join(writing, NULL);
 
-    pthread_cond_destroy(&cond);
-    pthread_mutex_destroy(&mutex);
-
-    close(sockfd);
-    //    std::cout << "in client destructor - end" << std::endl;
+//    pthread_cond_destroy(&cond);
+//    pthread_mutex_destroy(&mutex);
 }
 
 void* Client::readMsg(void* ptr)
 {
+    int n;
     while (running)
     {
         bzero(buffer, 256);
         n = read(sockfd, buffer, 255);
-
         if (n < 0)
         {
             perror("Error reading from socket");
         }
 
-        std::cout << "Server: " << buffer;
+        cout << "Server: " << buffer;
+        
+        if (strcmp(buffer, "STOP\n") == 0)
+        {
+            disconnect();
+            cout << "Server: Press Enter ..." << endl;
+        }
     }
-    std::cout << "end of readMsg method" << std::endl;
+    cout << "end of readMsg method" << endl;
     return nullptr;
 }
 
 void* Client::writeMsg(void* ptr)
 {
+    int n;
     while (running)
     {
-        std::cout << "You: ";
-
         bzero(buffer, 256);
         fgets(buffer, 255, stdin);
         if (strcmp(buffer, "end\n") == 0)
@@ -97,7 +102,7 @@ void* Client::writeMsg(void* ptr)
             perror("Error writing to socket");
         }
     }
-    std::cout << "end of writeMsg method" << std::endl;
+    cout << "end of writeMsg method" << endl;
     return nullptr;
 }
 

@@ -11,6 +11,8 @@ int main(int argc, char *argv[])
 
     Client c(argv[1], atoi(argv[2]));
     
+    c.run();
+    
     
     return 0;
 }

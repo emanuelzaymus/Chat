@@ -2,15 +2,14 @@
 
 #include "Server.h"
 
+int Server::maxId = 0;
+
 vector<struct client> Server::clients;
 int Server::sockfd = 0;
 socklen_t Server::cli_len = 0;
 struct sockaddr_in Server::cli_addr = {0};
 
 bool Server::running = true;
-
-pthread_t Server::reading[256] = {0};
-pthread_t Server::writing[256] = {0};
 
 Server::Server(int port)
 {
@@ -33,23 +32,40 @@ Server::Server(int port)
 
     listen(sockfd, 5);
     cli_len = sizeof (cli_addr);
-
-    pthread_create(&connecting, NULL, &connectClient, NULL);
 }
 
 Server::~Server()
 {
     cout << "in server destructor - start" << endl;
 
-    pthread_join(connecting, NULL);
 
-    for (struct client cl : clients)
-    {
-        close(cl.newsockfd);
-    }
     close(sockfd);
 
     cout << "in server destructor - end" << endl;
+}
+
+void Server::run()
+{
+    cout << "start running server" << endl;
+
+    pthread_create(&consoleReader, NULL, &readConsole, NULL);
+    pthread_create(&connecting, NULL, &connectClient, NULL);
+
+    //    pthread_join(connecting, NULL);   // TODO: never joined !!!
+    pthread_join(consoleReader, NULL);
+
+    stopAllClients();
+
+    struct client cl;
+    while (clients.size() != 0)
+    {
+        cl = clients.back();
+        pthread_join(cl.running, NULL);
+        close(cl.newsockfd);
+        clients.pop_back();
+    }
+
+    cout << "end running server" << endl;
 }
 
 void* Server::connectClient(void* ptr)
@@ -64,29 +80,49 @@ void* Server::connectClient(void* ptr)
         }
         struct client c;
         c.newsockfd = newSockfd;
-        c.index = clients.size();
-
+        c.id = maxId++;
         clients.push_back(c);
-        pthread_create(&reading[c.index], NULL, &readMsg, &c);
-        pthread_create(&writing[c.index], NULL, &writeMsg, &c);
 
-        cout << "in connectClient - created (client " << c.index << ")" << endl;
+        pthread_create(&(clients.back().running), NULL, &runClient, &clients.back());
+        cout << "connectClient - created client " << c.id << endl;
     }
     return nullptr;
 }
 
-void Server::disconnectClient(struct client cl)
+void Server::stopClient(struct client* cl)
 {
-    cout << "in disconnectClient - start (client " << cl.index << ")" << endl;
+    if (cl->runningThreads)
+    {
+        bzero(cl->buffer, 256);
+        cl->buffer[0] = 'S';
+        cl->buffer[1] = 'T';
+        cl->buffer[2] = 'O';
+        cl->buffer[3] = 'P';
+        cl->buffer[4] = '\n';
 
-    //todo bug here - stops here and waits
-    pthread_join(reading[cl.index], NULL);
-    pthread_join(writing[cl.index], NULL);
+        write(cl->newsockfd, cl->buffer, strlen(cl->buffer) + 1);
+        cl->runningThreads = false;
+
+        cout << "client " << cl->id << " - stopped" << endl;
+    }
+}
+
+void* Server::runClient(void* ptr)
+{
+    struct client cl = *((struct client*) ptr);
+    int id = cl.id;
+
+    cout << "start running client " << cl.id << endl;
+
+    pthread_create(&cl.reading, NULL, &readMsg, &cl);
+
+    pthread_join(cl.reading, NULL);
 
     close(cl.newsockfd);
-    clients.erase(clients.begin() + cl.index);
 
-    cout << "in disconnectClient - end (client " << cl.index << ")" << endl;
+    cout << "end running client " << id << endl;
+
+    return nullptr;
 }
 
 void* Server::readMsg(void* ptr)
@@ -94,51 +130,77 @@ void* Server::readMsg(void* ptr)
     struct client cl = *((struct client*) ptr);
 
     int n;
-    while (running && cl.runningThread)
+    while (running && cl.runningThreads)
     {
-        while (clients.size() > 0)
+        bzero(cl.buffer, 256);
+        n = read(cl.newsockfd, cl.buffer, 255);
+
+        if (n < 0)
         {
-            bzero(cl.buffer, 256);
-            n = read(cl.newsockfd, cl.buffer, 255);
+            perror("Error reading from socket");
+        }
+        cout << "Client " << cl.id << ": " << cl.buffer;
 
-            if (n < 0)
-            {
-                perror("Error reading from socket");
-            }
-            cout << "Client: " << cl.buffer;
-
-            if (strcmp(cl.buffer, "end\n") == 0)
-            {
-                write(cl.newsockfd, &cl.buffer, strlen(cl.buffer) + 1);
-                disconnectClient(cl);
-            }
+        if (strcmp(cl.buffer, "end\n") == 0)
+        {
+            stopClient(&cl);
         }
     }
+    cout << "readMsg - ended" << endl;
     return nullptr;
 }
 
 // todo writing only to 0. client
-void* Server::writeMsg(void* ptr)
+
+//void* Server::writeMsg(void* ptr)
+//{
+//    struct client cl = *((struct client*) ptr);
+//
+//    int n;
+//    while (running && cl.runningThreads)
+//    {
+//        bzero(cl.buffer, 256);
+//        fgets(cl.buffer, 255, stdin);
+//        if (strcmp(cl.buffer, "stop\n") == 0)
+//        {
+//            stopServer();
+//        }
+//
+//        n = write(cl.newsockfd, &cl.buffer, strlen(cl.buffer) + 1);
+//
+//        if (n < 0)
+//        {
+//            perror("Error writing to socket");
+//        }
+//    }
+//    cout << "writeMsg - ended" << endl;
+//    return nullptr;
+//}
+
+void* Server::readConsole(void* ptr)
 {
-    struct client cl = *((struct client*) ptr);
-
-    int n;
-    while (running && cl.runningThread)
+    string command;
+    while (running)
     {
-        while (clients.size() > 0)
+        cin >> command;
+        if (command == "stop")
         {
-//            cout << "You: ";
-
-            bzero(cl.buffer, 256);
-            fgets(cl.buffer, 255, stdin);
-            n = write(cl.newsockfd, &cl.buffer, strlen(cl.buffer) + 1);
-
-            if (n < 0)
-            {
-                perror("Error writing to socket");
-            }
+            stopServer();
         }
     }
     return nullptr;
 }
 
+void Server::stopServer()
+{
+    running = false;
+    cout << "server stopped !!!" << endl;
+}
+
+void Server::stopAllClients()
+{
+    for (auto cl : clients)
+    {
+        stopClient(&cl);
+    }
+}

@@ -16,17 +16,22 @@ using namespace std;
 
 struct client {
     int newsockfd;
-    int index;
+    int id;
     char buffer[256] = "";
-    bool runningThread = true;
+    bool runningThreads = true;
+    pthread_t reading;
+    pthread_t running;
 };
 
 class Server {
 public:
     Server(int port);
     virtual ~Server();
+    void run();
 
 private:
+    static int maxId;
+    
     static vector<struct client> clients;
     static int sockfd;
     static socklen_t cli_len;
@@ -36,14 +41,18 @@ private:
 
     struct sockaddr_in serv_addr;
 
+    pthread_t consoleReader;
     pthread_t connecting;
-    static pthread_t reading[256]; // todo give it to the struct (vector)
-    static pthread_t writing[256]; // todo give it to the struct (vector)
 
     static void* connectClient(void* ptr);
-    static void disconnectClient(struct client cl);
-    static void* readMsg(void* ptr);
-    static void* writeMsg(void* ptr);
+    static void stopClient(struct client* cl);
+    static void* runClient(void* ptr);
+    static void* readMsg(void* ptr);    // todo rename to service
+    static void* readConsole(void* ptr);
+    
+    static void stopServer();
+    
+    void stopAllClients();
 };
 
 #endif /* SERVER_H */

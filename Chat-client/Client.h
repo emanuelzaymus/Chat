@@ -13,14 +13,16 @@
 #include <pthread.h>
 #include <iostream>
 
+using namespace std;
+
 class Client {
 public:
     Client(const char* hostName, int port);
     virtual ~Client();
+    void run();
 
 private:
     static int sockfd;
-    static int n;                   //todo delete n
     static char buffer[256];
 
     static bool running;
@@ -31,11 +33,11 @@ private:
     static pthread_t reading;
     static pthread_t writing;
 
-    static pthread_mutex_t mutex;   //todo not used
-    static pthread_cond_t cond;     //todo not used
+//    static pthread_mutex_t mutex; //todo not used
+//    static pthread_cond_t cond; //todo not used
 
-    static void* readMsg(void* ptr);    //output
-    static void* writeMsg(void* ptr);   //input
+    static void* readMsg(void* ptr); //output
+    static void* writeMsg(void* ptr); //input
 
     static void disconnect();
 };
