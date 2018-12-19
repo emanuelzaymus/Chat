@@ -80,7 +80,6 @@ void* Server::connectClient(void* ptr)
         clients.push_back(c);
 
         pthread_create(&c->running, NULL, &runClient, c);
-        //        pthread_create(&(clients.back().running), NULL, &runClient, &clients.back());
         cout << "SERVER - Client " << c->id << " connected" << endl;
     }
     return nullptr;
@@ -90,12 +89,8 @@ void Server::stopClient(struct client* cl)
 {
     if (cl->runningThreads)
     {
-        bzero(cl->buffer, 256);
-        cl->buffer[0] = 'S';
-        cl->buffer[1] = 'T';
-        cl->buffer[2] = 'O';
-        cl->buffer[3] = 'P';
-        cl->buffer[4] = '\n';
+        //        bzero(cl->buffer, 256);
+        strcpy(cl->buffer, "STOP\n");
 
         write(cl->newsockfd, cl->buffer, strlen(cl->buffer) + 1);
         bzero(cl->buffer, 256);
@@ -130,23 +125,42 @@ void* Server::service(void* ptr)
     {
         bzero(cl->buffer, 256);
         n = read(cl->newsockfd, cl->buffer, 255);
-
         if (n < 0)
         {
             perror("Error reading from socket");
         }
+
         cout << "Client " << cl->id << ": " << cl->buffer;
 
         if (strcmp(cl->buffer, "end\n") == 0)
         {
             stopClient(cl);
         }
+        else if (strcmp(cl->buffer, "getFriendsList\n") == 0)
+        {
+            connectClients(cl);
+        }
+        else
+        {
+            cout << "sending mgs" << endl;
+            sendToChattingClient(cl->buffer, cl->chattingWith);
+            cout << "mgs sent" << endl;
+        }
     }
     cout << "SERVER - Ended service for client " << cl->id << endl;
     return nullptr;
 }
 
-// todo writing only to 0. client
+void Server::sendToChattingClient(char msg[256], struct client* toClient)
+{
+    int n = write(toClient->newsockfd, msg, strlen(msg) + 1);
+    if (n < 0)
+    {
+        perror("Error writing to socket");
+    }
+    cout << "SERVER - sent msg to " << toClient->id << " from "
+            << toClient->chattingWith->id << endl;
+}
 
 //void* Server::writeMsg(void* ptr)
 //{
@@ -200,3 +214,65 @@ void Server::stopAllClients()
         stopClient(cl);
     }
 }
+
+void Server::connectClients(struct client* cl)
+{
+    do
+    {
+        sendFriendList(cl);
+        cl->chattingWith = findClientById(readChoice(cl));
+    }
+    while (cl->chattingWith == nullptr);
+    // todo: connect both clients and notify them 
+}
+
+void Server::sendFriendList(struct client* cl)
+{
+    bzero(cl->buffer, 256);
+    if (cl->id == 0)
+    {
+        strcpy(cl->buffer, "1 - Jozko\n");
+    }
+    else if (cl->id == 1)
+    {
+        strcpy(cl->buffer, "0 - Ferko\n");
+    }
+
+    int n = write(cl->newsockfd, &cl->buffer, strlen(cl->buffer) + 1);
+    if (n < 0)
+    {
+        perror("Error writing to socket");
+    }
+}
+
+int Server::readChoice(struct client* cl)
+{
+    bzero(cl->buffer, 256);
+    int n = read(cl->newsockfd, cl->buffer, 255);
+
+    if (n < 0)
+    {
+        perror("Error reading from socket");
+    }
+    cout << "Client " << cl->id << ": " << cl->buffer;
+
+    if (strcmp(cl->buffer, "end\n") == 0)
+    {
+        stopClient(cl);
+    }
+
+    return atoi(cl->buffer);
+}
+
+struct client* Server::findClientById(int id)
+{
+    for (struct client* cl : clients)
+    {
+        if (cl->id == id)
+        {
+            return cl;
+        }
+    }
+    return nullptr;
+}
+

@@ -37,6 +37,10 @@
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <compileType>
+        <cTool>
+          <standard>10</standard>
+          <commandlineTool>gcc</commandlineTool>
+        </cTool>
         <ccTool>
           <standard>8</standard>
         </ccTool>

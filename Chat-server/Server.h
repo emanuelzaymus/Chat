@@ -21,6 +21,7 @@ struct client {
     bool runningThreads = true;
     pthread_t reading;
     pthread_t running;
+    struct client* chattingWith = nullptr;
 };
 
 class Server {
@@ -31,7 +32,7 @@ public:
 
 private:
     static int maxId;
-    
+
     static vector<struct client*> clients;
     static int sockfd;
     static socklen_t cli_len;
@@ -49,10 +50,15 @@ private:
     static void* runClient(void* ptr);
     static void* service(void* ptr);
     static void* readConsole(void* ptr);
-    
+
     static void stopServer();
-    
+
     void stopAllClients();
+    static void connectClients(struct client* cl);
+    static void sendFriendList(struct client* cl);
+    static int readChoice(struct client* cl);
+    static struct client* findClientById(int id);
+    static void sendToChattingClient(char msg[256], struct client* toClient);
 };
 
 #endif /* SERVER_H */

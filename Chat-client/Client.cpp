@@ -11,6 +11,8 @@ pthread_t Client::writing;
 //pthread_mutex_t Client::mutex = PTHREAD_MUTEX_INITIALIZER;
 //pthread_cond_t Client::cond = PTHREAD_COND_INITIALIZER;
 
+int Client::friendsId;
+
 Client::Client(const char* hostName, int port)
 {
     server = gethostbyname(hostName);
@@ -47,33 +49,39 @@ Client::~Client()
 
 void Client::run()
 {
-//    pthread_mutex_init(&mutex, NULL);
-//    pthread_cond_init(&cond, NULL);
+    //    pthread_mutex_init(&mutex, NULL);
+    //    pthread_cond_init(&cond, NULL);
 
-    pthread_create(&reading, NULL, &readMsg, NULL);
-    pthread_create(&writing, NULL, &writeMsg, NULL);
+    getFriendsList();
+
+    pthread_create(&reading, NULL, &readMsgs, NULL);
+    pthread_create(&writing, NULL, &writeMsgs, NULL);
 
     pthread_join(reading, NULL);
     pthread_join(writing, NULL);
 
-//    pthread_cond_destroy(&cond);
-//    pthread_mutex_destroy(&mutex);
+    //    pthread_cond_destroy(&cond);
+    //    pthread_mutex_destroy(&mutex);
 }
 
-void* Client::readMsg(void* ptr)
+void* Client::readMsgs(void* ptr)
 {
+    int i = 0;
     int n;
     while (running)
     {
+        cout << i++ << endl;
         bzero(buffer, 256);
         n = read(sockfd, buffer, 255);
+        cout << i++ << endl;
         if (n < 0)
         {
             perror("Error reading from socket");
         }
-
+        cout << i++ << endl;
         cout << "SERVER: " << buffer;
-        
+        sleep(1);
+        cout << i++ << endl;
         if (strcmp(buffer, "STOP\n") == 0 && running)
         {
             disconnect();
@@ -84,7 +92,7 @@ void* Client::readMsg(void* ptr)
     return nullptr;
 }
 
-void* Client::writeMsg(void* ptr)
+void* Client::writeMsgs(void* ptr)
 {
     int n;
     while (running)
@@ -110,3 +118,24 @@ void Client::disconnect()
 {
     running = false;
 }
+
+void Client::getFriendsList()
+{
+    strcpy(buffer, "getFriendsList\n");
+    int n = write(sockfd, buffer, strlen(buffer));
+    if (n < 0)
+    {
+        perror("Error writing to socket");
+    }
+
+    bzero(buffer, 256);
+    n = read(sockfd, buffer, 255);
+    if (n < 0)
+    {
+        perror("Error reading from socket");
+    }
+
+    cout << "Make choice:" << endl;
+    cout << buffer << endl;
+}
+

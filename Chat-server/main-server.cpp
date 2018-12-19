@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     }
 
     Server s(atoi(argv[1]));
-    
+
     s.run();
 
 

@@ -32,14 +32,19 @@ private:
 
     static pthread_t reading;
     static pthread_t writing;
+    
+    static int friendsId;
 
-//    static pthread_mutex_t mutex; //todo not used
-//    static pthread_cond_t cond; //todo not used
+    //    static pthread_mutex_t mutex; //todo not used
+    //    static pthread_cond_t cond; //todo not used
 
-    static void* readMsg(void* ptr); //output
-    static void* writeMsg(void* ptr); //input
+    static void* readMsgs(void* ptr);
+    static void* writeMsgs(void* ptr);
 
     static void disconnect();
+    
+    void getFriendsList();
+    void makeChice();
 };
 
 #endif /* CLIENT_H */
