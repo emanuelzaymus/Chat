@@ -17,6 +17,7 @@ using namespace std;
 struct client {
     int newsockfd;
     int id;
+    char nick[256] = "";
     char buffer[256] = "";
     bool runningThreads = true;
     pthread_t reading;
@@ -31,17 +32,14 @@ public:
     void run();
 
 private:
-    static int maxId;
-
-    static vector<struct client*> clients;
     static int sockfd;
     static socklen_t cli_len;
     static struct sockaddr_in cli_addr;
-
     static bool running;
+    static vector<struct client*> clients;
+    static int maxId;
 
     struct sockaddr_in serv_addr;
-
     pthread_t consoleReader;
     pthread_t connecting;
 
@@ -50,15 +48,18 @@ private:
     static void* runClient(void* ptr);
     static void* service(void* ptr);
     static void* readConsole(void* ptr);
-
+    static void readFromClient(struct client* cl);
+    static void readFromClientWithCheck(struct client* cl);
     static void stopServer();
-
-    void stopAllClients();
     static void connectClients(struct client* cl);
     static void sendFriendList(struct client* cl);
     static int readChoice(struct client* cl);
     static struct client* findClientById(int id);
-    static void sendToChattingClient(char msg[256], struct client* toClient);
+    static void sendToClient(char msg[256], struct client* toClient);
+    static void sendToClient(string str, struct client* toClient);
+    static void login(struct client* cl);
+    
+    void stopAllClients();
 };
 
 #endif /* SERVER_H */

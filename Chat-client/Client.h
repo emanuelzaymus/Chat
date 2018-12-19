@@ -24,27 +24,24 @@ public:
 private:
     static int sockfd;
     static char buffer[256];
-
     static bool running;
+    static pthread_t reading;
+    static pthread_t writing;
 
     struct sockaddr_in serv_addr;
     struct hostent* server;
 
-    static pthread_t reading;
-    static pthread_t writing;
-    
-    static int friendsId;
-
-    //    static pthread_mutex_t mutex; //todo not used
-    //    static pthread_cond_t cond; //todo not used
-
     static void* readMsgs(void* ptr);
     static void* writeMsgs(void* ptr);
-
     static void disconnect();
-    
+    static string readln();
+    static void writeToServer();
+    static void writeToServer(string str);
+    static void readFromServer();
+
     void getFriendsList();
     void makeChice();
+    void login();
 };
 
 #endif /* CLIENT_H */

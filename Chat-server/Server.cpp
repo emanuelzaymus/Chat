@@ -2,14 +2,13 @@
 
 #include "Server.h"
 
-int Server::maxId = 0;
 
-vector<struct client*> Server::clients;
 int Server::sockfd = 0;
 socklen_t Server::cli_len = 0;
 struct sockaddr_in Server::cli_addr = {0};
-
 bool Server::running = true;
+vector<struct client*> Server::clients;
+int Server::maxId = 0;
 
 Server::Server(int port)
 {
@@ -36,6 +35,14 @@ Server::Server(int port)
 
 Server::~Server()
 {
+    struct client* cl;
+    while (clients.size() != 0)
+    {
+        cl = clients.back();
+        pthread_join(cl->running, NULL);
+        clients.pop_back();
+        delete cl;
+    }
     close(sockfd);
 }
 
@@ -46,20 +53,10 @@ void Server::run()
     pthread_create(&consoleReader, NULL, &readConsole, NULL);
     pthread_create(&connecting, NULL, &connectClient, NULL);
 
-    //    pthread_join(connecting, NULL);   // TODO: never joined !!!
+    //    pthread_join(connecting, NULL);
     pthread_join(consoleReader, NULL);
 
     stopAllClients();
-
-    struct client* cl;
-    while (clients.size() != 0)
-    {
-        cl = clients.back();
-        pthread_join(cl->running, NULL);
-        close(cl->newsockfd);
-        clients.pop_back();
-        delete cl;
-    }
 
     cout << " - - - SERVER STOPPED - - - " << endl;
 }
@@ -89,10 +86,7 @@ void Server::stopClient(struct client* cl)
 {
     if (cl->runningThreads)
     {
-        //        bzero(cl->buffer, 256);
-        strcpy(cl->buffer, "STOP\n");
-
-        write(cl->newsockfd, cl->buffer, strlen(cl->buffer) + 1);
+        sendToClient(string("SERVER: STOP\n"), cl);
         bzero(cl->buffer, 256);
         cl->runningThreads = false;
 
@@ -108,11 +102,9 @@ void* Server::runClient(void* ptr)
     pthread_create(&cl->reading, NULL, &service, cl);
 
     pthread_join(cl->reading, NULL);
-
     close(cl->newsockfd);
 
     cout << "SERVER - Client " << id << " disconnected" << endl;
-
     return nullptr;
 }
 
@@ -120,72 +112,63 @@ void* Server::service(void* ptr)
 {
     struct client* cl = (struct client*) ptr;
 
-    int n;
     while (running && cl->runningThreads)
     {
-        bzero(cl->buffer, 256);
-        n = read(cl->newsockfd, cl->buffer, 255);
-        if (n < 0)
-        {
-            perror("Error reading from socket");
-        }
-
-        cout << "Client " << cl->id << ": " << cl->buffer;
-
-        if (strcmp(cl->buffer, "end\n") == 0)
-        {
-            stopClient(cl);
-        }
-        else if (strcmp(cl->buffer, "getFriendsList\n") == 0)
-        {
-            connectClients(cl);
-        }
-        else
-        {
-            cout << "sending mgs" << endl;
-            sendToChattingClient(cl->buffer, cl->chattingWith);
-            cout << "mgs sent" << endl;
-        }
+        readFromClientWithCheck(cl);
     }
     cout << "SERVER - Ended service for client " << cl->id << endl;
     return nullptr;
 }
 
-void Server::sendToChattingClient(char msg[256], struct client* toClient)
+void Server::readFromClientWithCheck(struct client* cl)
+{
+    readFromClient(cl);
+
+    if (strcmp(cl->buffer, "end\n") == 0)
+    {
+        stopClient(cl);
+    }
+    else if (strcmp(cl->buffer, "getFriendsList\n") == 0)
+    {
+        connectClients(cl);
+    }
+    else if (strcmp(cl->buffer, "login\n") == 0)
+    {
+        login(cl);
+    }
+    else
+    {
+        sendToClient(cl->buffer, cl->chattingWith);
+    }
+}
+
+void Server::readFromClient(struct client* cl)
+{
+    bzero(cl->buffer, 256);
+    int n = read(cl->newsockfd, cl->buffer, 255);
+    if (n < 0)
+    {
+        perror("Error reading from socket");
+    }
+    cout << "Client " << cl->id << ": " << cl->buffer << flush;
+}
+
+void Server::sendToClient(char msg[256], struct client* toClient)
 {
     int n = write(toClient->newsockfd, msg, strlen(msg) + 1);
     if (n < 0)
     {
         perror("Error writing to socket");
     }
-    cout << "SERVER - sent msg to " << toClient->id << " from "
-            << toClient->chattingWith->id << endl;
+    cout << "SERVER - sent msg to client " << toClient->id << endl;
 }
 
-//void* Server::writeMsg(void* ptr)
-//{
-//    struct client cl = *((struct client*) ptr);
-//
-//    int n;
-//    while (running && cl.runningThreads)
-//    {
-//        bzero(cl.buffer, 256);
-//        fgets(cl.buffer, 255, stdin);
-//        if (strcmp(cl.buffer, "stop\n") == 0)
-//        {
-//            stopServer();
-//        }
-//
-//        n = write(cl.newsockfd, &cl.buffer, strlen(cl.buffer) + 1);
-//
-//        if (n < 0)
-//        {
-//            perror("Error writing to socket");
-//        }
-//    }
-//    cout << "writeMsg - ended" << endl;
-//    return nullptr;
-//}
+void Server::sendToClient(string str, struct client* toClient)
+{
+    bzero(toClient->buffer, 256);
+    strcpy(toClient->buffer, str.c_str());
+    sendToClient(toClient->buffer, toClient);
+}
 
 void* Server::readConsole(void* ptr)
 {
@@ -223,44 +206,18 @@ void Server::connectClients(struct client* cl)
         cl->chattingWith = findClientById(readChoice(cl));
     }
     while (cl->chattingWith == nullptr);
-    // todo: connect both clients and notify them 
 }
 
 void Server::sendFriendList(struct client* cl)
 {
     bzero(cl->buffer, 256);
-    if (cl->id == 0)
-    {
-        strcpy(cl->buffer, "1 - Jozko\n");
-    }
-    else if (cl->id == 1)
-    {
-        strcpy(cl->buffer, "0 - Ferko\n");
-    }
-
-    int n = write(cl->newsockfd, &cl->buffer, strlen(cl->buffer) + 1);
-    if (n < 0)
-    {
-        perror("Error writing to socket");
-    }
+    strcpy(cl->buffer, "You do not have any contacts.\n");
+    sendToClient(cl->buffer, cl);
 }
 
 int Server::readChoice(struct client* cl)
 {
-    bzero(cl->buffer, 256);
-    int n = read(cl->newsockfd, cl->buffer, 255);
-
-    if (n < 0)
-    {
-        perror("Error reading from socket");
-    }
-    cout << "Client " << cl->id << ": " << cl->buffer;
-
-    if (strcmp(cl->buffer, "end\n") == 0)
-    {
-        stopClient(cl);
-    }
-
+    readFromClient(cl);
     return atoi(cl->buffer);
 }
 
@@ -276,3 +233,9 @@ struct client* Server::findClientById(int id)
     return nullptr;
 }
 
+void Server::login(struct client* cl)
+{
+    readFromClient(cl);
+    cout << endl;
+    strcpy(cl->nick, cl->buffer);
+}
