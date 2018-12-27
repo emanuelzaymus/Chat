@@ -1,6 +1,6 @@
 #include "FileHandler.h"
 
-void FileHandler::writeAppend(const string path, const string& text)
+void FileHandler::append(const string path, const string& text)
 {
     ofstream outFile(path, ofstream::app);
     outFile << text;
@@ -29,7 +29,7 @@ string FileHandler::read(const string path)
     return ret;
 }
 
-bool FileHandler::read(const string path, vector<string>& vecOfStrs)
+bool FileHandler::readLines(const string path, vector<string>& lines)
 {
     ifstream inFile(path);
 
@@ -40,11 +40,11 @@ bool FileHandler::read(const string path, vector<string>& vecOfStrs)
     }
 
     string str;
-//        while (getline(inFile, str))
-    while (inFile >> str)
+    while (getline(inFile, str))
+        //    while (inFile >> str)
     {
         if (str.size() > 0)
-            vecOfStrs.push_back(str);
+            lines.push_back(str);
     }
 
     inFile.close();

@@ -10,10 +10,10 @@ using namespace std;
 
 class FileHandler {
 public:
-    static void writeAppend(const string path, const string & text);
+    static void append(const string path, const string & text);
     static void write(const string path, const string & text);
     static string read(const string path);
-    static bool read(const string path, vector<string>& vecOfStrs);
+    static bool readLines(const string path, vector<string>& lines);
 
 };
 
