@@ -53,7 +53,7 @@ void Server::run()
     pthread_create(&consoleReader, NULL, &readConsole, NULL);
     pthread_create(&connecting, NULL, &connectClient, NULL);
 
-    //    pthread_join(connecting, NULL);
+    pthread_join(connecting, NULL);
     pthread_join(consoleReader, NULL);
 
     stopAllClients();
@@ -67,6 +67,10 @@ void* Server::connectClient(void* ptr)
     while (running)
     {
         newSockfd = accept(sockfd, (struct sockaddr*) &cli_addr, &cli_len);
+        if (!running)
+        {
+            break;
+        }
         if (newSockfd < 0)
         {
             perror("ERROR on accept");
@@ -79,6 +83,7 @@ void* Server::connectClient(void* ptr)
         pthread_create(&c->running, NULL, &runClient, c);
         cout << "SERVER - Client " << c->id << " connected" << endl;
     }
+    cout << "SERVER - end of connecting" << endl;
     return nullptr;
 }
 
@@ -187,6 +192,7 @@ void* Server::readConsole(void* ptr)
 void Server::stopServer()
 {
     running = false;
+    connectLastClient();
     cout << "SERVER is being stopped..." << endl;
 }
 
@@ -238,4 +244,35 @@ void Server::login(struct client* cl)
     readFromClient(cl);
     cout << endl;
     strcpy(cl->nick, cl->buffer);
+}
+
+void Server::connectLastClient()
+{
+    struct hostent* server = gethostbyname("frios2.fri.uniza.sk");
+    if (server == NULL)
+    {
+        fprintf(stderr, "Error, no such host\n");
+    }
+
+    struct sockaddr_in serv_addr;
+
+    bzero((char*) &serv_addr, sizeof (serv_addr));
+    serv_addr.sin_family = AF_INET;
+    bcopy(
+          (char*) server->h_addr,
+          (char*) &serv_addr.sin_addr.s_addr,
+          server->h_length
+          );
+    serv_addr.sin_port = htons(1046);
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0)
+    {
+        perror("Error creating socket");
+    }
+
+    if (connect(sockfd, (struct sockaddr*) &serv_addr, sizeof (serv_addr)) < 0)
+    {
+        perror("Error connecting to socket");
+    }
 }

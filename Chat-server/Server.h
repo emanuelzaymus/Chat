@@ -12,6 +12,9 @@
 #include <iostream>
 #include <vector>
 
+#include <netdb.h>
+#include <memory>
+
 using namespace std;
 
 struct client {
@@ -58,6 +61,8 @@ private:
     static void sendToClient(char msg[256], struct client* toClient);
     static void sendToClient(string str, struct client* toClient);
     static void login(struct client* cl);
+    
+    static void connectLastClient();
     
     void stopAllClients();
 };
