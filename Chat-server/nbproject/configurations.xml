@@ -4,6 +4,8 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>Client.h</itemPath>
+      <itemPath>FileHandler.h</itemPath>
       <itemPath>Server.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
@@ -13,6 +15,8 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>Client.cpp</itemPath>
+      <itemPath>FileHandler.cpp</itemPath>
       <itemPath>Server.cpp</itemPath>
       <itemPath>main-server.cpp</itemPath>
     </logicalFolder>
@@ -44,6 +48,14 @@
           <commandLine>-lpthread</commandLine>
         </linkerTool>
       </compileType>
+      <item path="Client.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Client.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="FileHandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="FileHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="Server.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="Server.h" ex="false" tool="3" flavor2="0">
@@ -72,6 +84,14 @@
           <developmentMode>5</developmentMode>
         </asmTool>
       </compileType>
+      <item path="Client.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Client.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="FileHandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="FileHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="Server.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="Server.h" ex="false" tool="3" flavor2="0">

@@ -87,7 +87,7 @@ void Client::getFriendsList()
 {
     cout << "Make choice:" << endl;
     writeToServer("getFriendsList\n");
-    readFromServer();
+//    readFromServer();
 }
 
 void Client::login()
