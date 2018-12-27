@@ -5,6 +5,9 @@ char Client::buffer[256] = {0};
 bool Client::running = true;
 pthread_t Client::reading;
 pthread_t Client::writing;
+pthread_mutex_t Client::mutex;
+pthread_cond_t Client::cond;
+bool Client::isLocked = false;
 
 Client::Client(const char* hostName, int port)
 {
@@ -111,9 +114,23 @@ void Client::writeToServer()
 
 void Client::writeToServer(string str)
 {
+//    pthread_mutex_lock(&mutex);
+//    if (isLocked)
+//    {
+//        cout << "   writing waiting" << endl;
+//        pthread_cond_wait(&cond, &mutex);
+//    }
+//    isLocked = true;
+//    cout << "client - writing: " << endl;
+
     bzero(buffer, 256);
     strcpy(buffer, str.c_str());
     writeToServer();
+
+//    cout << "client - end writing: " << endl;
+//    isLocked = false;
+//    pthread_mutex_unlock(&mutex);
+//    pthread_cond_signal(&cond);
 }
 
 string Client::readln()
@@ -125,6 +142,15 @@ string Client::readln()
 
 void Client::readFromServer()
 {
+//    pthread_mutex_lock(&mutex);
+//    if (isLocked)
+//    {
+//        cout << "   reading waiting" << endl;
+//        pthread_cond_wait(&cond, &mutex);
+//    }
+//    isLocked = true;
+//    cout << "client reading: " << endl;
+
     bzero(buffer, 256);
     int n = read(sockfd, buffer, 255);
     if (n < 0)
@@ -138,4 +164,9 @@ void Client::readFromServer()
         disconnect();
         cout << "SERVER: Press Enter..." << endl;
     }
+
+//    cout << "client end reading: " << endl;
+//    isLocked = false;
+//    pthread_mutex_unlock(&mutex);
+//    pthread_cond_signal(&cond);
 }

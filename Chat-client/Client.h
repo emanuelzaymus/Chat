@@ -27,6 +27,10 @@ private:
     static bool running;
     static pthread_t reading;
     static pthread_t writing;
+    
+    static pthread_mutex_t mutex;
+    static pthread_cond_t cond;
+    static bool isLocked;
 
     struct sockaddr_in serv_addr;
     struct hostent* server;

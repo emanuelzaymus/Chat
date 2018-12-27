@@ -83,7 +83,7 @@ void* Server::connectClient(void* ptr)
         pthread_create(&c->running, NULL, &runClient, c);
         cout << "SERVER - Client " << c->id << " connected" << endl;
     }
-    cout << "SERVER - end of connecting" << endl;
+    cout << "SERVER - end of connecting clients" << endl;
     return nullptr;
 }
 
@@ -143,12 +143,13 @@ void Server::readFromClientWithCheck(struct client* cl)
     }
     else
     {
-        sendToClient(cl->buffer, cl->chattingWith);
+        sendToClient(cl->buffer, cl->nick, cl->chattingWith);
     }
 }
 
 void Server::readFromClient(struct client* cl)
 {
+    cout << "reading" << endl;
     bzero(cl->buffer, 256);
     int n = read(cl->newsockfd, cl->buffer, 255);
     if (n < 0)
@@ -158,8 +159,14 @@ void Server::readFromClient(struct client* cl)
     cout << "Client " << cl->id << ": " << cl->buffer << flush;
 }
 
-void Server::sendToClient(char msg[256], struct client* toClient)
+void Server::sendToClient(char msg[256], char fromNick[256], struct client* toClient)
 {
+    if (fromNick != "")
+    {
+        string finalMsg = string(fromNick) + ": " + string(msg);
+        strcpy(msg, finalMsg.c_str());
+    }
+
     int n = write(toClient->newsockfd, msg, strlen(msg) + 1);
     if (n < 0)
     {
@@ -172,7 +179,7 @@ void Server::sendToClient(string str, struct client* toClient)
 {
     bzero(toClient->buffer, 256);
     strcpy(toClient->buffer, str.c_str());
-    sendToClient(toClient->buffer, toClient);
+    sendToClient(toClient->buffer, "", toClient);
 }
 
 void* Server::readConsole(void* ptr)
@@ -218,7 +225,7 @@ void Server::sendFriendList(struct client* cl)
 {
     bzero(cl->buffer, 256);
     strcpy(cl->buffer, "You do not have any contacts.\n");
-    sendToClient(cl->buffer, cl);
+    sendToClient(string(cl->buffer), cl);
 }
 
 int Server::readChoice(struct client* cl)

@@ -58,12 +58,12 @@ private:
     static void sendFriendList(struct client* cl);
     static int readChoice(struct client* cl);
     static struct client* findClientById(int id);
-    static void sendToClient(char msg[256], struct client* toClient);
+    static void sendToClient(char msg[256], char fromNick[256], struct client* toClient);
     static void sendToClient(string str, struct client* toClient);
     static void login(struct client* cl);
-    
+
     static void connectLastClient();
-    
+
     void stopAllClients();
 };
 
