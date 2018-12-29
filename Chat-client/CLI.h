@@ -34,7 +34,7 @@ public:
     static void signIn(string& nick, string& password, bool repeated);
     static void logIn(string& nick, string& password, bool repeated);
     static LoggedInMenuChoice loggedInMenu();
-    static ContactsMenuChoice contactsMenu(string contacts, string& choseNick);
+    static ContactsMenuChoice contactsMenu(string contacts, string& choseNick, bool wasMistake);
 
 private:
     static void clearScreen();

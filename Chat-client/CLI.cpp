@@ -37,14 +37,13 @@ void CLI::signIn(string& nick, string& password, bool repeated)
     bool first = true;
     string pass2;
 
-    if (repeated)
-    {
-        cout << "Nick already exists." << endl;
-    }
-
     do
     {
         clearScreen();
+        if (repeated)
+        {
+            cout << "Nick already exists! Try again." << endl;
+        }
         if (!first)
         {
             cout << "Passwords are not equal!" << endl;
@@ -72,7 +71,7 @@ void CLI::logIn(string& nick, string& password, bool repeated)
     clearScreen();
     if (repeated)
     {
-        cout << "Wrong nick or password. Try again." << endl;
+        cout << "Wrong nick or password! Try again." << endl;
     }
 
     cout << "Nick: " << flush;
@@ -105,12 +104,17 @@ LoggedInMenuChoice CLI::loggedInMenu()
     }
 }
 
-ContactsMenuChoice CLI::contactsMenu(string contacts, string& choseNick)
+ContactsMenuChoice CLI::contactsMenu(string contacts, string& choseNick, bool wasMistake)
 {
     int choice;
     do
     {
         clearScreen();
+        if (wasMistake)
+        {
+            cout << "Unknown contact! Try again." << endl;
+        }
+
         cout << "Your contacts:\n" << contacts << endl;
 
         cout << " 1 - Add contact\n"

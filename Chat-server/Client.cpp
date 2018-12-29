@@ -77,29 +77,18 @@ void Client::readWithCheckFrom(struct clientData* data)
     {
         getContacts(data);
     }
+    else if (msg == "__addContact\n")
+    {
+        addContact(data);
+    }
+    else if (msg == "__eraseContact\n")
+    {
+        eraseContact(data);
+    }
     else
     {
         send(data->buffer, data->nick, data->chattingWith->getClientData());
     }
-/*
-    switch (readFrom(data))
-    {
-    case string("__end\n"):
-        stop(data);
-        break;
-    case "__logIn\n":
-        logIn(data);
-        break;
-    case "__signIn\n":
-        signIn(data);
-        break;
-    case "__getContacts\n":
-        getContacts(data);
-        break;
-    default:
-        send(data->buffer, data->nick, data->chattingWith->getClientData());
-        break;
-    }*/
 }
 
 string Client::readFrom(struct clientData* data)
@@ -127,57 +116,79 @@ void Client::stop(struct clientData* data)
     }
 }
 
-//void Client::connectWith(struct clientData* data)
-//{
-//    do
-//    {
-//        data->chattingWith = Server::findClientById(readChoice(data));
-//    }
-//    while (data->chattingWith == nullptr);
-//}
-
 void Client::logIn(struct clientData* data)
 {
     send("SERVER: tryLogIn\n", data);
 
-    string nick = readFrom(data);
-    cout << endl;
-    string password = readFrom(data);
-    cout << endl;
+    string nick;
+    string password;
+    readNickAndPassword(nick, password, data);
 
-    // todo: check if is signed in !!!
-    // for now is signed in
-    send("SERVER: loggedIn\n", data);
-
-    data->nick = nick;
+    if (Server::logIn(nick, password))
+    {
+        data->nick = nick;
+        send("SERVER: loggedIn\n", data);
+    }
+    else
+    {
+        send("SERVER: NOT loggedIn\n", data);
+    }
 }
 
 void Client::signIn(struct clientData* data)
 {
     send("SERVER: trySignIn\n", data);
 
-    string nick = readFrom(data);
-    cout << endl;
-    string password = readFrom(data);
-    cout << endl;
+    string nick;
+    string password;
+    readNickAndPassword(nick, password, data);
 
-    // todo: check if can be signed in (if nick does not already exists)!!!
-    // for now can be signed in
-    send("SERVER: loggedIn\n", data);
-
-    data->nick = nick;
+    if (Server::signIn(nick, password))
+    {
+        data->nick = nick;
+        send("SERVER: loggedIn\n", data);
+    }
+    else
+    {
+        send("SERVER: NOT loggedIn\n", data);
+    }
 }
 
 void Client::getContacts(struct clientData* data)
 {
-    send("SERVER: readContacts\n", data);
-    readFrom(data);
-    send(Server::getContacts(data->id), data);
+//    send("SERVER: readContacts\n", data);
+//    readFrom(data); // sync
+    send(Server::getContacts(data->nick), data);
+}
 
-    //    string choseNick = readFrom(data);
-    //    cout << endl;
+void Client::addContact(struct clientData* data)
+{
+    send("SERVER: tryAddContact\n", data);
+    string choseNick = readFrom(data);
+    cout << endl;
+    if (Server::addContact(choseNick, data->nick))
+    {
+        send("SERVER: contactAdded\n", data);
+    }
+    else
+    {
+        send("SERVER: contact was not added\n", data);
+    }
+}
 
-    //    send("SERVER: connectedInChat\n", data);
+void Client::eraseContact(struct clientData* data)
+{
+    send("SERVER: tryEraseContact\n", data);
+    string choseNick = readFrom(data);
+    cout << endl;
+    if (Server::eraseContact(choseNick, data->nick))
+    {
+        send("SERVER: contactErased\n", data);
+    }
+    else
+    {
+        send("SERVER: contact was not erased\n", data);
+    }
 }
 
 void Client::send(char msg[256], string fromNick, struct clientData* toClient)
@@ -197,6 +208,14 @@ void Client::send(string msg, struct clientData* toClient)
     bzero(toClient->buffer, 256);
     strcpy(toClient->buffer, msg.c_str());
     send(toClient->buffer, "", toClient);
+}
+
+void Client::readNickAndPassword(string& nick, string& password, struct clientData* data)
+{
+    nick = readFrom(data);
+    cout << endl;
+    password = readFrom(data);
+    cout << endl;
 }
 
 void Client::addNickToMsg(char msg[256], string fromNick)

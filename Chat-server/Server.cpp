@@ -1,7 +1,9 @@
 #include <stddef.h>
 
 #include "Server.h"
+#include "FileHandler.h"
 
+const string registeredFile = "registered.txt";
 
 int Server::port = -1;
 int Server::sockfd = 0;
@@ -61,34 +63,43 @@ void Server::run()
     cout << " - - - SERVER STOPPED - - - " << endl;
 }
 
-string Server::getContacts(int id)
+bool Server::signIn(string nick, string password)
 {
-    // todo: find all clients contacts !!!
-    return "You do not have any contacts.";
+    if (isRegistered(nick))
+    {
+        return false;
+    }
+    registerClient(nick, password);
+    return true;
 }
 
-Client* Server::findClientById(int id)
+bool Server::logIn(string nick, string password)
 {
-    for (Client* cl : clients)
-    {
-        if (cl->getClientData()->id == id)
-        {
-            return cl;
-        }
-    }
-    return nullptr;
+    return passwordOf(nick) == password;
 }
 
-Client* Server::findClientByNick(string nick)
+string Server::getContacts(string nick)
 {
-    for (Client* cl : clients)
+    string contacts;
+    return FileHandler::read(nick + "_contacts.txt", contacts)
+            ? contacts
+            : "You do not have any contacts.\n";
+}
+
+bool Server::addContact(string choseNick, string nick)
+{
+    if (isRegistered(choseNick) && !hasContact(choseNick, nick))
     {
-        if (cl->getClientData()->nick == nick)
-        {
-            return cl;
-        }
+        writeContact(choseNick, nick);
+        writeContact(nick, choseNick);
+        return true;
     }
-    return nullptr;
+    return false;
+}
+
+bool Server::eraseContact(string choseNick, string nick)
+{
+    return removeContact(choseNick, nick) && removeContact(nick, choseNick);
 }
 
 bool Server::isRunning()
@@ -126,6 +137,21 @@ void* Server::readConsole(void* ptr)
         if (command == "stop")
         {
             stopServer();
+        }
+        else if (command == "read")
+        {
+            string file;
+            cin >> file;
+            file += ".txt";
+            cout << FileHandler::read(file);
+        }
+        else if (command == "remove")
+        {
+            string file;
+            cin >> file;
+            file += ".txt";
+            cout << FileHandler::read(file);
+            remove(file.c_str());
         }
     }
     return nullptr;
@@ -176,3 +202,82 @@ void Server::connectLastClient()
         perror("Error connecting to socket");
     }
 }
+
+void Server::registerClient(string nick, string password)
+{
+    FileHandler::append(registeredFile, nick + "\n" + password + "\n");
+}
+
+bool Server::isRegistered(string nick)
+{
+    return passwordOf(nick) != "";
+}
+
+string Server::passwordOf(string nick)
+{
+    vector<string> registered;
+    FileHandler::readLines(registeredFile, registered);
+
+    for (int i = 0; i < registered.size(); i += 2)
+    {
+        if (registered.at(i) == nick)
+        {
+            return registered.at(i + 1);
+        }
+    }
+    return string("");
+}
+
+Client* Server::findClientByNick(string nick)
+{
+    for (Client* cl : clients)
+    {
+        if (cl->getClientData()->nick == nick)
+        {
+            return cl;
+        }
+    }
+    return nullptr;
+}
+
+bool Server::hasContact(string choseNick, string nick)
+{
+    vector<string> contacts;
+    if (FileHandler::readLines(nick + "_contacts.txt", contacts))
+    {
+        for (string contactNick : contacts)
+        {
+            if (contactNick == choseNick)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void Server::writeContact(string choseNick, string nick)
+{
+    FileHandler::append(nick + "_contacts.txt", choseNick + "\n");
+}
+
+bool Server::removeContact(string choseNick, string nick)
+{
+    vector<string> contacts;
+    string path = nick + "_contacts.txt";
+    if (FileHandler::readLines(path, contacts))
+    {
+        for (int i = 0; i < contacts.size(); i++)
+        {
+            if (contacts.at(i) == choseNick)
+            {
+                contacts.erase(contacts.begin() + i);
+                FileHandler::write(path, contacts);
+                return true;
+            }
+
+        }
+    }
+    return false;
+}
+

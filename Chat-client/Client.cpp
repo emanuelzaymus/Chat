@@ -10,6 +10,7 @@ pthread_mutex_t Client::mutex;
 pthread_cond_t Client::cond;
 bool Client::isLocked = false;
 bool Client::repeatedLogging = false;
+string Client::choseNick = "";
 
 Client::Client(const char* hostName, int port)
 {
@@ -106,10 +107,12 @@ void Client::startMenu()
 
 void Client::loggedInMenu()
 {
+    repeatedLogging = false;
+
     switch (CLI::loggedInMenu())
     {
     case contactsChoice:
-        getContacts();
+        getContacts(false);
         break;
     case logOutChoice:
         startMenu();
@@ -124,34 +127,51 @@ void Client::loggedInMenu()
     }
 }
 
-void Client::getContacts()
+void Client::getContacts(bool wasMistake)
 {
     writeToServer("__getContacts\n");
+    contactsMenu(readFromServer(), wasMistake);
 }
 
-void Client::contactsMenu(string contacts)
+void Client::contactsMenu(string contacts, bool wasMistake)
 {
-    string choseNick = "";
-    switch (CLI::contactsMenu(contacts, choseNick))
+    switch (CLI::contactsMenu(contacts, choseNick, wasMistake))
     {
     case addContactChoice:
-        cout << "add " << choseNick << endl;
-        //        addContact(choseNick);
-        getContacts();
+        addContact();
         break;
     case eraseContactChoice:
-        cout << "erase " << choseNick << endl;
-        //        eraseContact(choseNick);
-        getContacts();
+        eraseContact();
         break;
     case startChatChoice:
-        cout << "start chat " << choseNick << endl;
         //        chat(choseNick);
         break;
     default:
         loggedInMenu();
         break;
     }
+}
+
+void Client::addContact()
+{
+    writeToServer("__addContact\n");
+}
+
+void Client::tryAddContact()
+{
+    writeToServer(choseNick);
+    getContacts(readFromServer() != "SERVER: contactAdded\n");
+}
+
+void Client::eraseContact()
+{
+    writeToServer("__eraseContact\n");
+}
+
+void Client::tryEraseContact()
+{
+    writeToServer(choseNick);
+    getContacts(readFromServer() != "SERVER: contactErased\n");
 }
 
 void Client::signIn()
@@ -167,6 +187,14 @@ void Client::trySignIn()
     CLI::signIn(nick, password, repeatedLogging);
     repeatedLogging = true;
     sendNickAndPassword(nick, password);
+    if (readFromServer() == "SERVER: loggedIn\n")
+    {
+        loggedInMenu();
+    }
+    else
+    {
+        signIn();
+    }
 }
 
 void Client::logIn()
@@ -182,6 +210,14 @@ void Client::tryLogIn()
     CLI::logIn(nick, password, repeatedLogging);
     repeatedLogging = true;
     sendNickAndPassword(nick, password);
+    if (readFromServer() == "SERVER: loggedIn\n")
+    {
+        loggedInMenu();
+    }
+    else
+    {
+        logIn();
+    }
 }
 
 void Client::sendNickAndPassword(string nick, string password)
@@ -243,19 +279,19 @@ void Client::readFromServerWithCheck()
     //    cout << "client reading: " << endl;
 
     string msgFromServer = readFromServer();
-//    if (running)
+    if (running) // todo: is it necessary????
     {
         if (msgFromServer == "SERVER: STOP\n")
         {
             disconnect();
             cout << "SERVER: Press Enter..." << endl;
         }
-        else if (msgFromServer == "SERVER: received\n") // todo IS NOT NECESSARY NOW !!!
-        {
+            //        else if (msgFromServer == "SERVER: received\n") // todo IS NOT NECESSARY NOW !!!
+            //        {
             //        cout << "in readWithCheck - if received" << endl;
             //        isLocked = false;
             //        pthread_cond_signal(&cond);
-        }
+            //        }
         else if (msgFromServer == "SERVER: tryLogIn\n")
         {
             tryLogIn();
@@ -264,15 +300,13 @@ void Client::readFromServerWithCheck()
         {
             trySignIn();
         }
-        else if (msgFromServer == "SERVER: loggedIn\n")
+        else if (msgFromServer == "SERVER: tryAddContact\n")
         {
-            repeatedLogging = false;
-            Client::loggedInMenu();
+            tryAddContact();
         }
-        else if (msgFromServer == "SERVER: readContacts\n")
+        else if (msgFromServer == "SERVER: tryEraseContact\n")
         {
-            writeToServer("__readyToRead");
-            contactsMenu(readFromServer());
+            tryEraseContact();
         }
     }
 

@@ -34,6 +34,7 @@ private:
     static pthread_cond_t cond;
     static bool isLocked;
     static bool repeatedLogging;
+    static string choseNick;
 
     struct sockaddr_in serv_addr;
     struct hostent* server;
@@ -47,8 +48,12 @@ private:
     static void readFromServerWithCheck();
     static string readFromServer();
 
-    static void getContacts();
-    static void contactsMenu(string contacts);
+    static void getContacts(bool wasMistake);
+    static void contactsMenu(string contacts, bool wasMistake);
+    static void addContact();
+    static void tryAddContact();
+    static void eraseContact();
+    static void tryEraseContact();
     static void logIn();
     static void tryLogIn();
     static void signIn();

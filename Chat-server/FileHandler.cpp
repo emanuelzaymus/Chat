@@ -14,19 +14,31 @@ void FileHandler::write(const string path, const string& text)
     outFile.close();
 }
 
-string FileHandler::read(const string path)
+void FileHandler::write(const string path, const vector<string>& vctr)
+{
+    string text = toString(vctr);
+    write(path, text);
+}
+
+bool FileHandler::read(const string path, string& ret)
 {
     ifstream inFile(path);
     if (!inFile.is_open())
     {
-        cout << "Cannot read file!!!" << endl;
+        cerr << "Cannot read file!!!" << endl;
+        return false;
     }
 
-    string ret;
     getline(inFile, ret, (char) inFile.eof());
     inFile.close();
 
-    return ret;
+    return true;
+}
+
+string FileHandler::read(const string path)
+{
+    string ret = "";
+    return read(path, ret) ? ret : "";
 }
 
 bool FileHandler::readLines(const string path, vector<string>& lines)
@@ -44,9 +56,22 @@ bool FileHandler::readLines(const string path, vector<string>& lines)
         //    while (inFile >> str)
     {
         if (str.size() > 0)
+        {
             lines.push_back(str);
+        }
     }
 
     inFile.close();
     return true;
 }
+
+string FileHandler::toString(const vector<string>& vctr)
+{
+    string ret = "";
+    for (auto line : vctr)
+    {
+        ret.append(line).append("\n");
+    }
+    return ret;
+}
+

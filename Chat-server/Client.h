@@ -26,24 +26,26 @@ public:
     struct clientData* getClientData();
 
     static void stop(struct clientData* data);
-    
+
 private:
     static int maxId;
-    
+
     struct clientData* dat;
 
     static void* run(void* ptr);
     static void* service(void* ptr);
     static void readWithCheckFrom(struct clientData* data);
     static string readFrom(struct clientData* data);
-//    static void connectWith(struct clientData* data);
     static void logIn(struct clientData* data);
     static void signIn(struct clientData* data);
     static void getContacts(struct clientData* data);
+    static void addContact(struct clientData* data);
+    static void eraseContact(struct clientData* data);
     static void send(char msg[256], string fromNick, struct clientData* toClient);
     static void send(string msg, struct clientData* toClient);
+    static void readNickAndPassword(string& nick, string& password, struct clientData* data);
     static void addNickToMsg(char msg[256], string fromNick);
-    
+
 };
 
 struct clientData {

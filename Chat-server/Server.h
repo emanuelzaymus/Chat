@@ -25,12 +25,16 @@ public:
     virtual ~Server();
     void run();
 
-    static string getContacts(int id);
-    static Client* findClientById(int id);
-    static Client* findClientByNick(string nick);
+    static bool signIn(string nick, string password);
+    static bool logIn(string nick, string password);
+    static string getContacts(string nick);
+    static bool addContact(string choseNick, string nick);
+    static bool eraseContact(string choseNick, string nick);
     static bool isRunning();
 
 private:
+    static const string refisteredFile;
+
     static int port;
     static int sockfd;
     static socklen_t cli_len;
@@ -46,6 +50,13 @@ private:
     static void* readConsole(void* ptr);
     static void stopServer();
     static void connectLastClient();
+    static void registerClient(string nick, string password);
+    static bool isRegistered(string nick);
+    static string passwordOf(string nick);
+    static Client* findClientByNick(string nick);
+    static bool hasContact(string chosenNick, string nick);
+    static void writeContact(string choseNick, string nick);;
+    static bool removeContact(string choseNick, string nick);;
 
     void stopAllClients();
 };
