@@ -26,17 +26,15 @@ public:
     void run();
 
     static Client* findClientById(int id);
-
-    static bool isRunning() {
-        return running;
-    }
+    static bool isRunning();
 
 private:
+    static int port;
     static int sockfd;
     static socklen_t cli_len;
     static struct sockaddr_in cli_addr;
-    static bool running;
     static vector<Client*> clients;
+    static bool running;
 
     struct sockaddr_in serv_addr;
     pthread_t consoleReader;

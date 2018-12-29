@@ -13,6 +13,8 @@
 #include <pthread.h>
 #include <iostream>
 
+#include "CLI.h"
+
 using namespace std;
 
 class Client {
@@ -27,10 +29,11 @@ private:
     static bool running;
     static pthread_t reading;
     static pthread_t writing;
-    
+
     static pthread_mutex_t mutex;
     static pthread_cond_t cond;
     static bool isLocked;
+    static bool repeatedLogging;
 
     struct sockaddr_in serv_addr;
     struct hostent* server;
@@ -41,11 +44,20 @@ private:
     static string readln();
     static void writeToServer();
     static void writeToServer(string str);
-    static void readFromServer();
+    static void readFromServerWithCheck();
+    static string readFromServer();
 
     void getFriendsList();
     void makeChice();
-    void login();
+    static void logIn();
+    static void tryLogIn();
+    static void signIn();
+    static void trySignIn();
+    static void sendNickAndPassword(string nick, string password);
+    static void startMenu();
+    static void loggedInMenu();
+    void runWritting();
+
 };
 
 #endif /* CLIENT_H */

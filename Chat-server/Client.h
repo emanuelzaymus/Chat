@@ -15,8 +15,6 @@
 #include <netdb.h>
 #include <memory>
 
-//#include "Server.h" // may couse problems TODO !!!
-//class Server;
 
 using namespace std;
 
@@ -25,27 +23,28 @@ public:
     Client(const int socket);
     virtual ~Client();
 
-    struct clientData* getClientData() {
-        return dat;
-    }
+    struct clientData* getClientData();
 
     static void stop(struct clientData* data);
+    
 private:
-    struct clientData* dat;
     static int maxId;
-//    static Server* server;
+    
+    struct clientData* dat;
 
     static void* run(void* ptr);
     static void* service(void* ptr);
-    static void readFromClientWithCheck(struct clientData* data);
-    static void readFromClient(struct clientData* data);
-    static void connectClients(struct clientData* data);
-    static void login(struct clientData* data);
-    static void sendToClient(char msg[256], char fromNick[256], struct clientData* toClient);
-    static void sendToClient(string str, struct clientData* toClient);
+    static void readWithCheckFrom(struct clientData* data);
+    static string readFrom(struct clientData* data);
+    static void connectWith(struct clientData* data);
+    static void logIn(struct clientData* data);
+    static void signIn(struct clientData* data);
+    static void send(char msg[256], char fromNick[256], struct clientData* toClient);
+    static void send(string msg, struct clientData* toClient);
     static void sendFriendList(struct clientData* data);
     static int readChoice(struct clientData* data);
-
+    static void addNickToMsg(char msg[256], char fromNick[256]);
+    
 };
 
 struct clientData {
@@ -56,7 +55,7 @@ struct clientData {
     bool runningThreads = true;
     pthread_t reading;
     pthread_t running;
-    Client* chattingWith = nullptr;
+    Client* chattingWith;
 };
 
 #endif /* CLIENT_H */

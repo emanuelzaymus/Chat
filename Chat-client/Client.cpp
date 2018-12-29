@@ -5,9 +5,11 @@ char Client::buffer[256] = {0};
 bool Client::running = true;
 pthread_t Client::reading;
 pthread_t Client::writing;
+
 pthread_mutex_t Client::mutex;
 pthread_cond_t Client::cond;
 bool Client::isLocked = false;
+bool Client::repeatedLogging = false;
 
 Client::Client(const char* hostName, int port)
 {
@@ -40,26 +42,29 @@ Client::Client(const char* hostName, int port)
 
 Client::~Client()
 {
+    pthread_join(reading, NULL); // maybie at the and of run()
+    pthread_join(writing, NULL); // maybie at the and of run()
     close(sockfd);
 }
 
 void Client::run()
 {
-    login();
-    getFriendsList();
+    pthread_create(&reading, NULL, &readMsgs, NULL); //todo maybie runReading()
 
-    pthread_create(&reading, NULL, &readMsgs, NULL);
+    startMenu();
+    cout << "in run() after start menu" << endl;
+}
+
+void Client::runWritting() // todo call somewhere !!!
+{
     pthread_create(&writing, NULL, &writeMsgs, NULL);
-
-    pthread_join(reading, NULL);
-    pthread_join(writing, NULL);
 }
 
 void* Client::readMsgs(void* ptr)
 {
     while (running)
     {
-        readFromServer();
+        readFromServerWithCheck();
     }
     cout << "CLIENT - Ended reading service" << endl;
     return nullptr;
@@ -81,20 +86,83 @@ void* Client::writeMsgs(void* ptr)
 void Client::disconnect()
 {
     running = false;
+    writeToServer("__end\n");
 }
 
 void Client::getFriendsList()
 {
     cout << "Make choice:" << endl;
-    writeToServer("getFriendsList\n");
+    writeToServer("__getFriendsList\n");
 }
 
-void Client::login()
+void Client::startMenu()
 {
-    writeToServer("login\n");
-    cout << "Login: " << flush;
-    writeToServer(readln());
-    sleep(1);
+    switch (CLI::startMenu())
+    {
+    case signInChoice:
+        signIn();
+        break;
+    case logInChoice:
+        logIn();
+        break;
+    default:
+        disconnect();
+        break;
+    }
+}
+
+void Client::loggedInMenu()
+{
+    switch (CLI::loggedInMenu())
+    {
+    case chatChoice:
+        //    getFriendsList();
+        break;
+    case logOutChoice:
+        startMenu();
+        break;
+    case deleteAccountChoice:
+        break;
+    default:
+        disconnect();
+        break;
+    }
+}
+
+void Client::signIn()
+{
+    writeToServer("__signIn\n");
+}
+
+void Client::trySignIn()
+{
+    string nick;
+    string password;
+
+    CLI::signIn(nick, password, repeatedLogging);
+    repeatedLogging = true;
+    sendNickAndPassword(nick, password);
+}
+
+void Client::logIn()
+{
+    writeToServer("__logIn\n");
+}
+
+void Client::tryLogIn()
+{
+    string nick;
+    string password;
+
+    CLI::logIn(nick, password, repeatedLogging);
+    repeatedLogging = true;
+    sendNickAndPassword(nick, password);
+}
+
+void Client::sendNickAndPassword(string nick, string password)
+{
+    writeToServer(nick);
+    writeToServer(password);
 }
 
 void Client::writeToServer()
@@ -105,31 +173,32 @@ void Client::writeToServer()
         perror("Error writing to socket");
     }
 
-    if (strcmp(buffer, "end\n") == 0)
-    {
-        disconnect();
-    }
+    //    if (strcmp(buffer, "__end\n") == 0)
+    //    {
+    //        disconnect();
+    //    }
 }
 
 void Client::writeToServer(string str)
 {
-//    pthread_mutex_lock(&mutex);
-//    if (isLocked)
-//    {
-//        cout << "   writing waiting" << endl;
-//        pthread_cond_wait(&cond, &mutex);
-//    }
-//    isLocked = true;
-//    cout << "client - writing: " << endl;
+    /*pthread_mutex_lock(&mutex);
+    if (isLocked)
+    {
+        cout << "   writing waiting" << endl;
+        pthread_cond_wait(&cond, &mutex);
+//        readFromServerWithCheck(); !!!!
+    }
+    isLocked = true;*/
+    cout << "client - writing: " << endl;
 
     bzero(buffer, 256);
     strcpy(buffer, str.c_str());
     writeToServer();
 
-//    cout << "client - end writing: " << endl;
-//    isLocked = false;
-//    pthread_mutex_unlock(&mutex);
-//    pthread_cond_signal(&cond);
+    cout << "client - end writing: " << endl;
+    //        isLocked = false;
+    //    pthread_mutex_unlock(&mutex);
+    //    pthread_cond_signal(&cond);  !!!
 }
 
 string Client::readln()
@@ -139,17 +208,54 @@ string Client::readln()
     return str;
 }
 
-void Client::readFromServer()
+void Client::readFromServerWithCheck()
 {
-//    pthread_mutex_lock(&mutex);
-//    if (isLocked)
-//    {
-//        cout << "   reading waiting" << endl;
-//        pthread_cond_wait(&cond, &mutex);
-//    }
-//    isLocked = true;
-//    cout << "client reading: " << endl;
+    //        pthread_mutex_lock(&mutex);
+    //        if (isLocked)
+    //        {
+    //            cout << "   reading waiting" << endl;
+    //            pthread_cond_wait(&cond, &mutex);
+    //        }
+    //        isLocked = true;
+    cout << "client reading: " << endl;
 
+    string msgFromServer = readFromServer();
+
+    if (msgFromServer == "SERVER: STOP\n" && running)
+    {
+        disconnect();
+        cout << "SERVER: Press Enter..." << endl;
+    }
+    else if (msgFromServer == "SERVER: received\n" && running)
+    {
+        cout << "in readWithCheck - if received" << endl;
+        //        isLocked = false;
+        //        pthread_cond_signal(&cond);
+    }
+    else if (msgFromServer == "SERVER: tryLogIn\n" && running)
+    {
+        cout << "in readWithCheck - if tryLogIn" << endl;
+        tryLogIn();
+    }
+    else if (msgFromServer == "SERVER: trySignIn\n" && running)
+    {
+        cout << "in readWithCheck - if trySignIn" << endl;
+        trySignIn();
+    }
+    else if (msgFromServer == "SERVER: loggedIn\n" && running)
+    {
+        cout << "in readWithCheck - if loggedIn" << endl;
+        Client::loggedInMenu();
+    }
+
+    cout << "client end reading: " << endl;
+    //        isLocked = false;
+    //        pthread_mutex_unlock(&mutex);
+    //        pthread_cond_signal(&cond);
+}
+
+string Client::readFromServer()
+{
     bzero(buffer, 256);
     int n = read(sockfd, buffer, 255);
     if (n < 0)
@@ -158,14 +264,6 @@ void Client::readFromServer()
     }
     cout << buffer << flush;
 
-    if (strcmp(buffer, "SERVER: STOP\n") == 0 && running)
-    {
-        disconnect();
-        cout << "SERVER: Press Enter..." << endl;
-    }
-
-//    cout << "client end reading: " << endl;
-//    isLocked = false;
-//    pthread_mutex_unlock(&mutex);
-//    pthread_cond_signal(&cond);
+    return string(buffer);
 }
+

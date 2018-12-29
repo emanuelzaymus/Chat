@@ -3,7 +3,6 @@
 #include "Server.h"
 
 int Client::maxId = 0;
-//Server* Client::server = nullptr;
 
 Client::Client(const int socket)
 {
@@ -20,6 +19,11 @@ Client::~Client()
 {
     pthread_join(dat->running, NULL);
     delete dat;
+}
+
+struct clientData* Client::getClientData()
+{
+    return dat;
 }
 
 void* Client::run(void* ptr)
@@ -40,37 +44,46 @@ void* Client::service(void* ptr)
 {
     struct clientData* data = (struct clientData*) ptr;
 
-    while (/*server->*/Server::isRunning() && data->runningThreads)
+    while (Server::isRunning() && data->runningThreads)
     {
-        readFromClientWithCheck(data);
+        readWithCheckFrom(data);
     }
     cout << "SERVER - Ended service for client " << data->id << endl;
     return nullptr;
 }
 
-void Client::readFromClientWithCheck(struct clientData* data)
+void Client::readWithCheckFrom(struct clientData* data)
 {
-    readFromClient(data);
+    string msg = readFrom(data);
 
-    if (strcmp(data->buffer, "end\n") == 0)
+    //synchronization of reading msgs
+    //    cout << "before sending received" << endl;
+    //    send("SERVER: received\n", data);
+    //    cout << "after sending received" << endl;
+
+    if (msg == "__end\n")
     {
         stop(data);
     }
-    else if (strcmp(data->buffer, "getFriendsList\n") == 0)
+    else if (msg == "__getFriendsList\n")
     {
-        connectClients(data);
+        connectWith(data);
     }
-    else if (strcmp(data->buffer, "login\n") == 0)
+    else if (msg == "__logIn\n")
     {
-        login(data);
+        logIn(data);
+    }
+    else if (msg == "__signIn\n")
+    {
+        signIn(data);
     }
     else
     {
-        sendToClient(data->buffer, data->nick, data->chattingWith->getClientData());
+        send(data->buffer, data->nick, data->chattingWith->getClientData());
     }
 }
 
-void Client::readFromClient(struct clientData* data)
+string Client::readFrom(struct clientData* data)
 {
     bzero(data->buffer, 256);
     int n = read(data->socket, data->buffer, 255);
@@ -78,14 +91,16 @@ void Client::readFromClient(struct clientData* data)
     {
         perror("Error reading from socket");
     }
+
     cout << "Client " << data->id << ": " << data->buffer << flush;
+    return string(data->buffer);
 }
 
 void Client::stop(struct clientData* data)
 {
     if (data->runningThreads)
     {
-        sendToClient(string("SERVER: STOP\n"), data);
+        send(string("SERVER: STOP\n"), data);
         bzero(data->buffer, 256);
         data->runningThreads = false;
 
@@ -93,55 +108,96 @@ void Client::stop(struct clientData* data)
     }
 }
 
-void Client::connectClients(struct clientData* data)
+void Client::connectWith(struct clientData* data)
 {
     do
     {
         sendFriendList(data);
-        data->chattingWith = /*server->*/Server::findClientById(readChoice(data));
+        data->chattingWith = Server::findClientById(readChoice(data));
     }
     while (data->chattingWith == nullptr);
 }
 
-void Client::login(struct clientData* data)
+void Client::logIn(struct clientData* data)
 {
-    readFromClient(data);
+    send("SERVER: tryLogIn\n", data);
+
+    cout << 0 << endl;
+    string nick = readFrom(data);
     cout << endl;
-    strcpy(data->nick, data->buffer);
+
+    cout << 1 << endl;
+    string password = readFrom(data);
+    cout << endl;
+
+    cout << 2 << endl;
+    // todo: check if is signed in !!!
+    // for now is signed in
+    send("SERVER: loggedIn\n", data);
+
+    cout << 3 << endl;
+    strcpy(data->nick, nick.c_str()); // TODO: make nick sting 
 }
 
-void Client::sendToClient(char msg[256], char fromNick[256], struct clientData* toClient)
+void Client::signIn(struct clientData* data)
 {
-    if (fromNick != "")
-    {
-        string finalMsg = string(fromNick) + ": " + string(msg);
-        strcpy(msg, finalMsg.c_str());
-    }
+    send("SERVER: trySignIn\n", data);
+
+    cout << 0 << endl;
+    string nick = readFrom(data);
+    cout << endl;
+
+    cout << 1 << endl;
+    string password = readFrom(data);
+    cout << endl;
+
+    cout << 2 << endl;
+    // todo: check if can be signed in (if nick does not already exists)!!!
+    // for now can be signed in
+    send("SERVER: loggedIn\n", data);
+
+    cout << 3 << endl;
+    strcpy(data->nick, nick.c_str()); // TODO: make nick sting 
+}
+
+void Client::send(char msg[256], char fromNick[256], struct clientData* toClient)
+{
+    addNickToMsg(msg, fromNick);
 
     int n = write(toClient->socket, msg, strlen(msg) + 1);
     if (n < 0)
     {
         perror("Error writing to socket");
     }
-    cout << "SERVER - sent msg to client " << toClient->id << endl;
+    cout << "SERVER - sent msg to client " << toClient->id << ": " << msg << endl;
 }
 
-void Client::sendToClient(string str, struct clientData* toClient)
+void Client::send(string msg, struct clientData* toClient)
 {
     bzero(toClient->buffer, 256);
-    strcpy(toClient->buffer, str.c_str());
-    sendToClient(toClient->buffer, "", toClient);
+    strcpy(toClient->buffer, msg.c_str());
+    send(toClient->buffer, "", toClient);
 }
 
 void Client::sendFriendList(struct clientData* data)
 {
     bzero(data->buffer, 256);
     strcpy(data->buffer, "You do not have any contacts.\n");
-    sendToClient(string(data->buffer), data);
+    send(string(data->buffer), data);
 }
 
 int Client::readChoice(struct clientData* data)
 {
-    readFromClient(data);
+    //return atoi(readFrom(data));
+    readFrom(data);
     return atoi(data->buffer);
+}
+
+void Client::addNickToMsg(char msg[256], char fromNick[256])
+{
+    if (fromNick != "")
+    {
+        string finalMsg = string(fromNick) + ": " + string(msg);
+        strcpy(msg, finalMsg.c_str());
+    }
 }

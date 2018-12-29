@@ -3,14 +3,16 @@
 #include "Server.h"
 
 
+int Server::port = -1;
 int Server::sockfd = 0;
 socklen_t Server::cli_len = 0;
 struct sockaddr_in Server::cli_addr = {0};
-bool Server::running = true;
 vector<Client*> Server::clients;
+bool Server::running = true;
 
 Server::Server(int port)
 {
+    Server::port = port;
     bzero((char*) &serv_addr, sizeof (serv_addr));
 
     serv_addr.sin_family = AF_INET;
@@ -57,6 +59,23 @@ void Server::run()
     stopAllClients();
 
     cout << " - - - SERVER STOPPED - - - " << endl;
+}
+
+Client* Server::findClientById(int id)
+{
+    for (Client* cl : clients)
+    {
+        if (cl->getClientData()->id == id)
+        {
+            return cl;
+        }
+    }
+    return nullptr;
+}
+
+bool Server::isRunning()
+{
+    return running;
 }
 
 void* Server::connectClient(void* ptr)
@@ -109,18 +128,6 @@ void Server::stopAllClients()
     }
 }
 
-Client* Server::findClientById(int id)
-{
-    for (Client* cl : clients)
-    {
-        if (cl->getClientData()->id == id)
-        {
-            return cl;
-        }
-    }
-    return nullptr;
-}
-
 void Server::connectLastClient()
 {
     struct hostent* server = gethostbyname("frios2.fri.uniza.sk");
@@ -138,7 +145,7 @@ void Server::connectLastClient()
           (char*) &serv_addr.sin_addr.s_addr,
           server->h_length
           );
-    serv_addr.sin_port = htons(1046);
+    serv_addr.sin_port = htons(port);
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
