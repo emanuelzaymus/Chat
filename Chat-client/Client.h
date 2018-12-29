@@ -47,8 +47,8 @@ private:
     static void readFromServerWithCheck();
     static string readFromServer();
 
-    void getFriendsList();
-    void makeChice();
+    static void getContacts();
+    static void contactsMenu(string contacts);
     static void logIn();
     static void tryLogIn();
     static void signIn();

@@ -13,9 +13,16 @@ enum StartMenuChoice {
 
 enum LoggedInMenuChoice {
     exitLoggedInMenuChoice,
-    chatChoice,
+    contactsChoice,
     logOutChoice,
     deleteAccountChoice
+};
+
+enum ContactsMenuChoice {
+    bakcContactsMenuChoice,
+    addContactChoice,
+    eraseContactChoice,
+    startChatChoice
 };
 
 class CLI {
@@ -27,6 +34,7 @@ public:
     static void signIn(string& nick, string& password, bool repeated);
     static void logIn(string& nick, string& password, bool repeated);
     static LoggedInMenuChoice loggedInMenu();
+    static ContactsMenuChoice contactsMenu(string contacts, string& choseNick);
 
 private:
     static void clearScreen();

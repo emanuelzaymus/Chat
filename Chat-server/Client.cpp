@@ -65,10 +65,6 @@ void Client::readWithCheckFrom(struct clientData* data)
     {
         stop(data);
     }
-    else if (msg == "__getFriendsList\n")
-    {
-        connectWith(data);
-    }
     else if (msg == "__logIn\n")
     {
         logIn(data);
@@ -77,10 +73,33 @@ void Client::readWithCheckFrom(struct clientData* data)
     {
         signIn(data);
     }
+    else if (msg == "__getContacts\n")
+    {
+        getContacts(data);
+    }
     else
     {
         send(data->buffer, data->nick, data->chattingWith->getClientData());
     }
+/*
+    switch (readFrom(data))
+    {
+    case string("__end\n"):
+        stop(data);
+        break;
+    case "__logIn\n":
+        logIn(data);
+        break;
+    case "__signIn\n":
+        signIn(data);
+        break;
+    case "__getContacts\n":
+        getContacts(data);
+        break;
+    default:
+        send(data->buffer, data->nick, data->chattingWith->getClientData());
+        break;
+    }*/
 }
 
 string Client::readFrom(struct clientData* data)
@@ -108,59 +127,60 @@ void Client::stop(struct clientData* data)
     }
 }
 
-void Client::connectWith(struct clientData* data)
-{
-    do
-    {
-        sendFriendList(data);
-        data->chattingWith = Server::findClientById(readChoice(data));
-    }
-    while (data->chattingWith == nullptr);
-}
+//void Client::connectWith(struct clientData* data)
+//{
+//    do
+//    {
+//        data->chattingWith = Server::findClientById(readChoice(data));
+//    }
+//    while (data->chattingWith == nullptr);
+//}
 
 void Client::logIn(struct clientData* data)
 {
     send("SERVER: tryLogIn\n", data);
 
-    cout << 0 << endl;
     string nick = readFrom(data);
     cout << endl;
-
-    cout << 1 << endl;
     string password = readFrom(data);
     cout << endl;
 
-    cout << 2 << endl;
     // todo: check if is signed in !!!
     // for now is signed in
     send("SERVER: loggedIn\n", data);
 
-    cout << 3 << endl;
-    strcpy(data->nick, nick.c_str()); // TODO: make nick sting 
+    data->nick = nick;
 }
 
 void Client::signIn(struct clientData* data)
 {
     send("SERVER: trySignIn\n", data);
 
-    cout << 0 << endl;
     string nick = readFrom(data);
     cout << endl;
-
-    cout << 1 << endl;
     string password = readFrom(data);
     cout << endl;
 
-    cout << 2 << endl;
     // todo: check if can be signed in (if nick does not already exists)!!!
     // for now can be signed in
     send("SERVER: loggedIn\n", data);
 
-    cout << 3 << endl;
-    strcpy(data->nick, nick.c_str()); // TODO: make nick sting 
+    data->nick = nick;
 }
 
-void Client::send(char msg[256], char fromNick[256], struct clientData* toClient)
+void Client::getContacts(struct clientData* data)
+{
+    send("SERVER: readContacts\n", data);
+    readFrom(data);
+    send(Server::getContacts(data->id), data);
+
+    //    string choseNick = readFrom(data);
+    //    cout << endl;
+
+    //    send("SERVER: connectedInChat\n", data);
+}
+
+void Client::send(char msg[256], string fromNick, struct clientData* toClient)
 {
     addNickToMsg(msg, fromNick);
 
@@ -179,25 +199,11 @@ void Client::send(string msg, struct clientData* toClient)
     send(toClient->buffer, "", toClient);
 }
 
-void Client::sendFriendList(struct clientData* data)
-{
-    bzero(data->buffer, 256);
-    strcpy(data->buffer, "You do not have any contacts.\n");
-    send(string(data->buffer), data);
-}
-
-int Client::readChoice(struct clientData* data)
-{
-    //return atoi(readFrom(data));
-    readFrom(data);
-    return atoi(data->buffer);
-}
-
-void Client::addNickToMsg(char msg[256], char fromNick[256])
+void Client::addNickToMsg(char msg[256], string fromNick)
 {
     if (fromNick != "")
     {
-        string finalMsg = string(fromNick) + ": " + string(msg);
+        string finalMsg = fromNick + ": " + string(msg);
         strcpy(msg, finalMsg.c_str());
     }
 }

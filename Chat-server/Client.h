@@ -36,21 +36,20 @@ private:
     static void* service(void* ptr);
     static void readWithCheckFrom(struct clientData* data);
     static string readFrom(struct clientData* data);
-    static void connectWith(struct clientData* data);
+//    static void connectWith(struct clientData* data);
     static void logIn(struct clientData* data);
     static void signIn(struct clientData* data);
-    static void send(char msg[256], char fromNick[256], struct clientData* toClient);
+    static void getContacts(struct clientData* data);
+    static void send(char msg[256], string fromNick, struct clientData* toClient);
     static void send(string msg, struct clientData* toClient);
-    static void sendFriendList(struct clientData* data);
-    static int readChoice(struct clientData* data);
-    static void addNickToMsg(char msg[256], char fromNick[256]);
+    static void addNickToMsg(char msg[256], string fromNick);
     
 };
 
 struct clientData {
     int socket;
     int id;
-    char nick[256] = "";
+    string nick = "";
     char buffer[256] = "";
     bool runningThreads = true;
     pthread_t reading;

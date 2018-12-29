@@ -87,7 +87,7 @@ LoggedInMenuChoice CLI::loggedInMenu()
     do
     {
         clearScreen();
-        cout << " 1 - Chat\n"
+        cout << " 1 - Contacts\n"
                 << " 2 - Log out\n"
                 << " 3 - Delete account\n"
                 << " 0 - Exit\n"
@@ -95,18 +95,51 @@ LoggedInMenuChoice CLI::loggedInMenu()
                 << flush;
         cin >> choice;
     }
-    while (choice < 0 || choice > 2);
+    while (choice < 0 || choice > 3);
     switch (choice)
     {
-    case 1: return chatChoice;
+    case 1: return contactsChoice;
     case 2: return logOutChoice;
     case 3: return deleteAccountChoice;
     default: return exitLoggedInMenuChoice;
     }
 }
 
+ContactsMenuChoice CLI::contactsMenu(string contacts, string& choseNick)
+{
+    int choice;
+    do
+    {
+        clearScreen();
+        cout << "Your contacts:\n" << contacts << endl;
+
+        cout << " 1 - Add contact\n"
+                << " 2 - Erase contact\n"
+                << " 3 - Start chat\n"
+                << " 0 - Back\n"
+                << " Your choice: "
+                << flush;
+        cin >> choice;
+        if (choice >= 1 && choice <= 3)
+        {
+            cout << "Enter nick: " << flush;
+            cin >> choseNick;
+        }
+    }
+    while (choice < 0
+           || choice > 3
+           || choseNick == "" && choice >= 1 && choice <= 3);
+    switch (choice)
+    {
+    case 1: return addContactChoice;
+    case 2: return eraseContactChoice;
+    case 3: return startChatChoice;
+    default: return bakcContactsMenuChoice;
+    }
+}
+
 void CLI::clearScreen()
 {
-    //    system("clear");
+    system("clear");
 }
 

@@ -61,11 +61,29 @@ void Server::run()
     cout << " - - - SERVER STOPPED - - - " << endl;
 }
 
+string Server::getContacts(int id)
+{
+    // todo: find all clients contacts !!!
+    return "You do not have any contacts.";
+}
+
 Client* Server::findClientById(int id)
 {
     for (Client* cl : clients)
     {
         if (cl->getClientData()->id == id)
+        {
+            return cl;
+        }
+    }
+    return nullptr;
+}
+
+Client* Server::findClientByNick(string nick)
+{
+    for (Client* cl : clients)
+    {
+        if (cl->getClientData()->nick == nick)
         {
             return cl;
         }

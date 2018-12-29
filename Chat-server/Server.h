@@ -25,7 +25,9 @@ public:
     virtual ~Server();
     void run();
 
+    static string getContacts(int id);
     static Client* findClientById(int id);
+    static Client* findClientByNick(string nick);
     static bool isRunning();
 
 private:
