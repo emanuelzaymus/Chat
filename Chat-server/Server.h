@@ -27,13 +27,15 @@ public:
 
     static bool signIn(string nick, string password);
     static bool logIn(string nick, string password);
+    static void deleteAccount(string nick);
     static string getContacts(string nick);
-    static bool addContact(string choseNick, string nick);
-    static bool eraseContact(string choseNick, string nick);
+    static bool addContact(string choseNick, string toNick);
+    static bool eraseContact(string choseNick, string fromNick);
     static bool isRunning();
 
 private:
-    static const string refisteredFile;
+    //    static const string refisteredFile; // todo: delete
+    //    static const string contactsFile;
 
     static int port;
     static int sockfd;
@@ -54,9 +56,10 @@ private:
     static bool isRegistered(string nick);
     static string passwordOf(string nick);
     static Client* findClientByNick(string nick);
-    static bool hasContact(string chosenNick, string nick);
-    static void writeContact(string choseNick, string nick);;
-    static bool removeContact(string choseNick, string nick);;
+    static bool hasContact(string chosenNick, string inNick);
+    static void writeContact(string choseNick, string toNick);
+    static bool removeContact(string choseNick, string fromNick);
+    static bool eraseLineFromFile(string line, string path, bool eraseTwoLines);
 
     void stopAllClients();
 };

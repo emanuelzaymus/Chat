@@ -38,6 +38,7 @@ private:
     static string readFrom(struct clientData* data);
     static void logIn(struct clientData* data);
     static void signIn(struct clientData* data);
+    static void deleteAccount(struct clientData* data);
     static void getContacts(struct clientData* data);
     static void addContact(struct clientData* data);
     static void eraseContact(struct clientData* data);

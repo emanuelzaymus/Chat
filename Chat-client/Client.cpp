@@ -118,13 +118,18 @@ void Client::loggedInMenu()
         startMenu();
         break;
     case deleteAccountChoice:
-        //        deleteAccount();
+        deleteAccount();
         startMenu();
         break;
     default:
         disconnect();
         break;
     }
+}
+
+void Client::deleteAccount()
+{
+    writeToServer("__deleteAccount\n");
 }
 
 void Client::getContacts(bool wasMistake)

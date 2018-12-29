@@ -37,7 +37,7 @@ bool FileHandler::read(const string path, string& ret)
 
 string FileHandler::read(const string path)
 {
-    string ret = "";
+    string ret;
     return read(path, ret) ? ret : "";
 }
 

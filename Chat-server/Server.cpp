@@ -4,6 +4,7 @@
 #include "FileHandler.h"
 
 const string registeredFile = "registered.txt";
+const string contactsFile = "_contacts.txt";
 
 int Server::port = -1;
 int Server::sockfd = 0;
@@ -78,10 +79,24 @@ bool Server::logIn(string nick, string password)
     return passwordOf(nick) == password;
 }
 
+void Server::deleteAccount(string nick)
+{
+    eraseLineFromFile(nick, registeredFile, true);
+    vector<string> contacts;
+    string path = nick + contactsFile;
+    FileHandler::readLines(path, contacts);
+    for (auto c : contacts)
+    {
+        removeContact(nick, c);
+        //        remove(); remove conversations with contacts !!! abc_xyz
+    }
+    remove(path.c_str());
+}
+
 string Server::getContacts(string nick)
 {
     string contacts;
-    return FileHandler::read(nick + "_contacts.txt", contacts)
+    return FileHandler::read(nick.append(contactsFile), contacts)
             ? contacts
             : "You do not have any contacts.\n";
 }
@@ -243,7 +258,7 @@ Client* Server::findClientByNick(string nick)
 bool Server::hasContact(string choseNick, string nick)
 {
     vector<string> contacts;
-    if (FileHandler::readLines(nick + "_contacts.txt", contacts))
+    if (FileHandler::readLines(nick.append(contactsFile), contacts))
     {
         for (string contactNick : contacts)
         {
@@ -258,26 +273,32 @@ bool Server::hasContact(string choseNick, string nick)
 
 void Server::writeContact(string choseNick, string nick)
 {
-    FileHandler::append(nick + "_contacts.txt", choseNick + "\n");
+    FileHandler::append(nick.append(contactsFile), choseNick + "\n");
 }
 
-bool Server::removeContact(string choseNick, string nick)
+bool Server::removeContact(string choseNick, string fromNick)
 {
-    vector<string> contacts;
-    string path = nick + "_contacts.txt";
-    if (FileHandler::readLines(path, contacts))
+    return eraseLineFromFile(choseNick, fromNick.append(contactsFile), false);
+}
+
+bool Server::eraseLineFromFile(string lineToErase, string path, bool eraseTwoLines)
+{
+    vector<string> lines;
+    if (FileHandler::readLines(path, lines))
     {
-        for (int i = 0; i < contacts.size(); i++)
+        for (int i = 0; i < lines.size(); i++)
         {
-            if (contacts.at(i) == choseNick)
+            if (lines.at(i) == lineToErase)
             {
-                contacts.erase(contacts.begin() + i);
-                FileHandler::write(path, contacts);
+                lines.erase(lines.begin() + i);
+                if (eraseTwoLines)
+                {
+                    lines.erase(lines.begin() + i);
+                }
+                FileHandler::write(path, lines);
                 return true;
             }
-
         }
     }
     return false;
 }
-

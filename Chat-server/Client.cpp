@@ -65,13 +65,17 @@ void Client::readWithCheckFrom(struct clientData* data)
     {
         stop(data);
     }
+    else if (msg == "__signIn\n")
+    {
+        signIn(data);
+    }
     else if (msg == "__logIn\n")
     {
         logIn(data);
     }
-    else if (msg == "__signIn\n")
+    else if (msg == "__deleteAccount\n")
     {
-        signIn(data);
+        deleteAccount(data);
     }
     else if (msg == "__getContacts\n")
     {
@@ -116,25 +120,6 @@ void Client::stop(struct clientData* data)
     }
 }
 
-void Client::logIn(struct clientData* data)
-{
-    send("SERVER: tryLogIn\n", data);
-
-    string nick;
-    string password;
-    readNickAndPassword(nick, password, data);
-
-    if (Server::logIn(nick, password))
-    {
-        data->nick = nick;
-        send("SERVER: loggedIn\n", data);
-    }
-    else
-    {
-        send("SERVER: NOT loggedIn\n", data);
-    }
-}
-
 void Client::signIn(struct clientData* data)
 {
     send("SERVER: trySignIn\n", data);
@@ -154,10 +139,32 @@ void Client::signIn(struct clientData* data)
     }
 }
 
+void Client::logIn(struct clientData* data)
+{
+    send("SERVER: tryLogIn\n", data);
+
+    string nick;
+    string password;
+    readNickAndPassword(nick, password, data);
+
+    if (Server::logIn(nick, password))
+    {
+        data->nick = nick;
+        send("SERVER: loggedIn\n", data);
+    }
+    else
+    {
+        send("SERVER: NOT loggedIn\n", data);
+    }
+}
+
+void Client::deleteAccount(struct clientData* data)
+{
+    Server::deleteAccount(data->nick);
+}
+
 void Client::getContacts(struct clientData* data)
 {
-//    send("SERVER: readContacts\n", data);
-//    readFrom(data); // sync
     send(Server::getContacts(data->nick), data);
 }
 

@@ -48,6 +48,9 @@ private:
     static void readFromServerWithCheck();
     static string readFromServer();
 
+    static void startMenu();
+    static void loggedInMenu();
+    static void deleteAccount();
     static void getContacts(bool wasMistake);
     static void contactsMenu(string contacts, bool wasMistake);
     static void addContact();
@@ -59,8 +62,6 @@ private:
     static void signIn();
     static void trySignIn();
     static void sendNickAndPassword(string nick, string password);
-    static void startMenu();
-    static void loggedInMenu();
     void runWritting();
 
 };

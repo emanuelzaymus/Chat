@@ -17,8 +17,9 @@ public:
     static string read(const string path);
     static bool readLines(const string path, vector<string>& lines);
 
+private:
     static string toString(const vector<string>& vctr);
-    
+
 };
 
 #endif /* FILEHANDLER_H */
