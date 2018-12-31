@@ -3,7 +3,7 @@
 #include "Server.h"
 #include "FileHandler.h"
 
-const string registeredFile = "registered.txt";
+const string registeredFilePath = "registered.txt";
 const string contactsFile = "_contacts.txt";
 
 int Server::port = -1;
@@ -66,7 +66,7 @@ void Server::run()
 
 bool Server::signIn(string nick, string password)
 {
-    if (isRegistered(nick))
+    if (isRegistered(nick) || nick == "contacts")
     {
         return false;
     }
@@ -81,14 +81,15 @@ bool Server::logIn(string nick, string password)
 
 void Server::deleteAccount(string nick)
 {
-    eraseLineFromFile(nick, registeredFile, true);
+    eraseLineFromFile(nick, registeredFilePath, true);
     vector<string> contacts;
-    string path = nick + contactsFile;
+    string path = contactsFilePath(nick);
     FileHandler::readLines(path, contacts);
     for (auto c : contacts)
     {
         removeContact(nick, c);
-        //        remove(); remove conversations with contacts !!! abc_xyz
+        remove(getConversationFilePath(nick, c).c_str());
+        remove(getConversationFilePath(c, nick).c_str());
     }
     remove(path.c_str());
 }
@@ -96,7 +97,7 @@ void Server::deleteAccount(string nick)
 string Server::getContacts(string nick)
 {
     string contacts;
-    return FileHandler::read(nick.append(contactsFile), contacts) && contacts != ""
+    return FileHandler::read(contactsFilePath(nick), contacts) && contacts != ""
             ? contacts
             : "You do not have any contacts.\n";
 }
@@ -115,7 +116,7 @@ bool Server::addContact(string choseNick, string toNick)
 bool Server::hasContact(string choseNick, string inNick)
 {
     vector<string> contacts;
-    if (FileHandler::readLines(inNick.append(contactsFile), contacts))
+    if (FileHandler::readLines(contactsFilePath(inNick), contacts))
     {
         for (string contactNick : contacts)
         {
@@ -143,6 +144,16 @@ Client* Server::findClientByNick(string nick)
         }
     }
     return nullptr;
+}
+
+string Server::getConversation(string nick, string chattingWithNick)
+{
+    return FileHandler::read(getConversationFilePath(nick, chattingWithNick));
+}
+
+void Server::writeToConversation(string msg, string nick, string chattingWithNick)
+{
+    FileHandler::append(getConversationFilePath(nick, chattingWithNick), msg);
 }
 
 bool Server::isRunning()
@@ -248,7 +259,7 @@ void Server::connectLastClient()
 
 void Server::registerClient(string nick, string password)
 {
-    FileHandler::append(registeredFile, nick + "\n" + password + "\n");
+    FileHandler::append(registeredFilePath, nick + "\n" + password + "\n");
 }
 
 bool Server::isRegistered(string nick)
@@ -259,7 +270,7 @@ bool Server::isRegistered(string nick)
 string Server::passwordOf(string nick)
 {
     vector<string> registered;
-    FileHandler::readLines(registeredFile, registered);
+    FileHandler::readLines(registeredFilePath, registered);
 
     for (int i = 0; i < registered.size(); i += 2)
     {
@@ -273,12 +284,12 @@ string Server::passwordOf(string nick)
 
 void Server::writeContact(string choseNick, string toNick)
 {
-    FileHandler::append(toNick.append(contactsFile), choseNick + "\n");
+    FileHandler::append(contactsFilePath(toNick), choseNick + "\n");
 }
 
 bool Server::removeContact(string choseNick, string fromNick)
 {
-    return eraseLineFromFile(choseNick, fromNick.append(contactsFile), false);
+    return eraseLineFromFile(choseNick, contactsFilePath(fromNick), false);
 }
 
 bool Server::eraseLineFromFile(string lineToErase, string path, bool eraseTwoLines)
@@ -301,4 +312,18 @@ bool Server::eraseLineFromFile(string lineToErase, string path, bool eraseTwoLin
         }
     }
     return false;
+}
+
+string Server::getConversationFilePath(string nick, string chattingWithNick)
+{
+    //    if (nick > chattingWithNick)
+    //    {
+    //        nick.swap(chattingWithNick);
+    //    }
+    return nick.append("_").append(chattingWithNick).append(".txt");
+}
+
+string Server::contactsFilePath(string nick)
+{
+    return nick.append(contactsFile);
 }

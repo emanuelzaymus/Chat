@@ -44,15 +44,16 @@ Client::Client(const char* hostName, int port)
 
 Client::~Client()
 {
-    pthread_join(reading, NULL); // maybie at the and of run()
     close(sockfd);
 }
 
 void Client::run()
 {
-    pthread_create(&reading, NULL, &readMsgs, NULL); //todo maybie runReading()
+    pthread_create(&reading, NULL, &readMsgs, NULL);
 
     startMenu();
+
+    pthread_join(reading, NULL);
 }
 
 void Client::runWritting()
@@ -82,7 +83,7 @@ void* Client::writeMsgs(void* ptr)
     while (running && runningWritting)
     {
         s = readln();
-        s.append("\n\0");
+        //        s.append("\n\0");
         writeToServer(s);
     }
     cout << "CLIENT - Ended writing service" << endl;
@@ -118,7 +119,7 @@ void Client::loggedInMenu()
     switch (CLI::loggedInMenu())
     {
     case contactsChoice:
-        getContacts(false);
+        contactsMenu(false);
         break;
     case logOutChoice:
         startMenu();
@@ -138,17 +139,15 @@ void Client::deleteAccount()
     writeToServer("__deleteAccount\n");
 }
 
-void Client::getContacts(bool wasMistake)
+string Client::getContacts()
 {
     writeToServer("__getContacts\n");
-    contactsMenu(readFromServer(), wasMistake); // todo: should not be like this, 
-    // do not call getContacts(wasMistake); but contactsMenu(wasMistake);
+    return readFromServer();
 }
 
-void Client::contactsMenu(string contacts, bool wasMistake)
+void Client::contactsMenu(bool wasMistake)
 {
-    //    switch (CLI::contactsMenu(getContacts(), choseNick, wasMistake))
-    switch (CLI::contactsMenu(contacts, choseNick, wasMistake))
+    switch (CLI::contactsMenu(getContacts(), choseNick, wasMistake))
     {
     case addContactChoice:
         addContact();
@@ -173,7 +172,7 @@ void Client::addContact()
 void Client::tryAddContact()
 {
     writeToServer(choseNick);
-    getContacts(readFromServer() != "SERVER: contactAdded\n");
+    contactsMenu(readFromServer() != "SERVER: contactAdded\n");
 }
 
 void Client::eraseContact()
@@ -184,7 +183,7 @@ void Client::eraseContact()
 void Client::tryEraseContact()
 {
     writeToServer(choseNick);
-    getContacts(readFromServer() != "SERVER: contactErased\n");
+    contactsMenu(readFromServer() != "SERVER: contactErased\n");
 }
 
 void Client::connectInChat()
@@ -201,20 +200,26 @@ void Client::tryConnectInChat()
     }
     else
     {
-        getContacts(true);
+        contactsMenu(true);
     }
 }
 
 void Client::startChat()
 {
-    CLI::chat(choseNick, ""/*getConversation(choseNick)*/);
+    CLI::chat(choseNick, getConversation());
     runWritting();
+}
+
+string Client::getConversation()
+{
+    writeToServer("__getConversation\n");
+    return readFromServer();
 }
 
 void Client::tryDisconnectInChat()
 {
     stopWritting();
-    getContacts(false);
+    contactsMenu(false);
 }
 
 void Client::signIn()
@@ -294,8 +299,8 @@ void Client::writeToServer(string str)
     bzero(buffer, 256);
     strcpy(buffer, str.c_str());
     writeToServer();
-    
-    if (str == "__back\n")
+
+    if (str == "__back")
     {
         runningWritting = false;
     }
@@ -327,43 +332,41 @@ void Client::readFromServerWithCheck()
     //    cout << "client reading: " << endl;
 
     string msgFromServer = readFromServer();
-    if (running) // todo: is it necessary????
+
+    if (msgFromServer == "SERVER: STOP\n")
     {
-        if (msgFromServer == "SERVER: STOP\n")
-        {
-            disconnect();
-            cout << "SERVER: Press Enter..." << endl;
-        }
-            //        else if (msgFromServer == "SERVER: received\n") // todo IS NOT NECESSARY NOW !!!
-            //        {
-            //        cout << "in readWithCheck - if received" << endl;
-            //        isLocked = false;
-            //        pthread_cond_signal(&cond);
-            //        }
-        else if (msgFromServer == "SERVER: tryLogIn\n")
-        {
-            tryLogIn();
-        }
-        else if (msgFromServer == "SERVER: trySignIn\n")
-        {
-            trySignIn();
-        }
-        else if (msgFromServer == "SERVER: tryAddContact\n")
-        {
-            tryAddContact();
-        }
-        else if (msgFromServer == "SERVER: tryEraseContact\n")
-        {
-            tryEraseContact();
-        }
-        else if (msgFromServer == "SERVER: tryConnectInChat\n")
-        {
-            tryConnectInChat();
-        }
-        else if (msgFromServer == "SERVER: tryDisconnectInChat\n")
-        {
-            tryDisconnectInChat();
-        }
+        disconnect();
+        cout << "SERVER: Press Enter..." << endl;
+    }
+        //        else if (msgFromServer == "SERVER: received\n") // todo IS NOT NECESSARY NOW !!!
+        //        {
+        //        cout << "in readWithCheck - if received" << endl;
+        //        isLocked = false;
+        //        pthread_cond_signal(&cond);
+        //        }
+    else if (msgFromServer == "SERVER: tryLogIn\n")
+    {
+        tryLogIn();
+    }
+    else if (msgFromServer == "SERVER: trySignIn\n")
+    {
+        trySignIn();
+    }
+    else if (msgFromServer == "SERVER: tryAddContact\n")
+    {
+        tryAddContact();
+    }
+    else if (msgFromServer == "SERVER: tryEraseContact\n")
+    {
+        tryEraseContact();
+    }
+    else if (msgFromServer == "SERVER: tryConnectInChat\n")
+    {
+        tryConnectInChat();
+    }
+    else if (msgFromServer == "SERVER: tryDisconnectInChat\n")
+    {
+        tryDisconnectInChat();
     }
 
     //    cout << "client end reading: " << endl;
@@ -381,7 +384,7 @@ string Client::readFromServer()
     {
         perror("Error reading from socket");
     }
-    cout << buffer << flush;
+    cout << buffer << endl; //flush;
 
     return string(buffer);
 }

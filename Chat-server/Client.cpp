@@ -7,7 +7,7 @@ int Client::maxId = 0;
 Client::Client(const int socket)
 {
     struct clientData* data = new struct clientData();
-    dat = data;
+    clientData = data;
     data->socket = socket;
     data->id = maxId++;
 
@@ -17,13 +17,13 @@ Client::Client(const int socket)
 
 Client::~Client()
 {
-    pthread_join(dat->running, NULL);
-    delete dat;
+    pthread_join(clientData->running, NULL);
+    delete clientData;
 }
 
 struct clientData* Client::getClientData()
 {
-    return dat;
+    return clientData;
 }
 
 void* Client::run(void* ptr)
@@ -93,13 +93,17 @@ void Client::readWithCheckFrom(struct clientData* data)
     {
         connectInChat(data);
     }
-    else if (msg == "__back\n")
+    else if (msg == "__getConversation\n")
+    {
+        getConversation(data);
+    }
+    else if (msg == "__back")
     {
         disconnectInChat(data);
     }
     else
     {
-        send(data->buffer, data->nick, data->chattingWith->getClientData());
+        deliver(data->buffer, data->nick, data->chattingWith->clientData);
     }
 }
 
@@ -112,7 +116,7 @@ string Client::readFrom(struct clientData* data)
         perror("Error reading from socket");
     }
 
-    cout << "Client " << data->id << ": " << data->buffer << flush;
+    cout << "Client " << data->id << ": " << data->buffer << endl; //flush;
     return string(data->buffer);
 }
 
@@ -213,7 +217,7 @@ void Client::connectInChat(struct clientData* data)
     cout << endl;
     if (Server::hasContact(choseNick, data->nick))
     {
-        data->chattingWith = Server::findClientByNick(choseNick);
+        data->chattingWith = Server::findClientByNick(choseNick); // todo here may give nullptr
         send("SERVER: connectedInChat\n", data);
     }
     else
@@ -222,16 +226,31 @@ void Client::connectInChat(struct clientData* data)
     }
 }
 
+void Client::getConversation(struct clientData* data)
+{
+    send(Server::getConversation(data->nick, data->chattingWith->clientData->nick), data);
+}
+
 void Client::disconnectInChat(struct clientData* data)
 {
     send("SERVER: tryDisconnectInChat\n", data);
     data->chattingWith = nullptr;
 }
 
-void Client::send(char msg[256], string fromNick, struct clientData* toClient)
+void Client::deliver(char msg[256], string fromNick, struct clientData* toClient)
 {
+    Server::writeToConversation(string(msg) + "\n", fromNick, toClient->nick);
     addNickToMsg(msg, fromNick);
+    Server::writeToConversation(string(msg) + "\n", toClient->nick, fromNick);
 
+    if (toClient->chattingWith->clientData->nick == fromNick)
+    {
+        send(msg, toClient);
+    }
+}
+
+void Client::send(char msg[256], struct clientData* toClient)
+{
     int n = write(toClient->socket, msg, strlen(msg) + 1);
     if (n < 0)
     {
@@ -244,7 +263,7 @@ void Client::send(string msg, struct clientData* toClient)
 {
     bzero(toClient->buffer, 256);
     strcpy(toClient->buffer, msg.c_str());
-    send(toClient->buffer, "", toClient);
+    send(toClient->buffer, toClient);
 }
 
 void Client::readNickAndPassword(string& nick, string& password, struct clientData* data)
@@ -263,3 +282,4 @@ void Client::addNickToMsg(char msg[256], string fromNick)
         strcpy(msg, finalMsg.c_str());
     }
 }
+

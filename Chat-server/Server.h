@@ -33,6 +33,8 @@ public:
     static bool hasContact(string chosenNick, string inNick);
     static bool eraseContact(string choseNick, string fromNick);
     static Client* findClientByNick(string nick);
+    static string getConversation(string nick, string chattingWithNick);
+    static void writeToConversation(string msg, string nick, string chattingWithNick);
     static bool isRunning();
 
 private:
@@ -60,6 +62,8 @@ private:
     static void writeContact(string choseNick, string toNick);
     static bool removeContact(string choseNick, string fromNick);
     static bool eraseLineFromFile(string line, string path, bool eraseTwoLines);
+    static string getConversationFilePath(string nick, string chattingWithNick);
+    static string contactsFilePath(string nick);
 
     void stopAllClients();
 };

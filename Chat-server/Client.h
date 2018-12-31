@@ -30,7 +30,7 @@ public:
 private:
     static int maxId;
 
-    struct clientData* dat;
+    struct clientData* clientData;
 
     static void* run(void* ptr);
     static void* service(void* ptr);
@@ -43,8 +43,10 @@ private:
     static void addContact(struct clientData* data);
     static void eraseContact(struct clientData* data);
     static void connectInChat(struct clientData* data);
+    static void getConversation(struct clientData* data);
     static void disconnectInChat(struct clientData* data);
-    static void send(char msg[256], string fromNick, struct clientData* toClient);
+    static void deliver(char msg[256], string fromNick, struct clientData* toClient);
+    static void send(char msg[256], struct clientData* toClient);
     static void send(string msg, struct clientData* toClient);
     static void readNickAndPassword(string& nick, string& password, struct clientData* data);
     static void addNickToMsg(char msg[256], string fromNick);

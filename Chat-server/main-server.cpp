@@ -9,9 +9,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    Server s(atoi(argv[1]));
-
-    s.run();
+        Server s(atoi(argv[1]));
+    
+        s.run();
 
 
     return 0;

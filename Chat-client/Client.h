@@ -54,8 +54,8 @@ private:
     static void startMenu();
     static void loggedInMenu();
     static void deleteAccount();
-    static void getContacts(bool wasMistake);
-    static void contactsMenu(string contacts, bool wasMistake);
+    static string getContacts();
+    static void contactsMenu(bool wasMistake);
     static void addContact();
     static void tryAddContact();
     static void eraseContact();
@@ -63,6 +63,7 @@ private:
     static void connectInChat();
     static void tryConnectInChat();
     static void startChat();
+    static string getConversation();
     static void tryDisconnectInChat();
     static void logIn();
     static void tryLogIn();
