@@ -89,6 +89,14 @@ void Client::readWithCheckFrom(struct clientData* data)
     {
         eraseContact(data);
     }
+    else if (msg == "__connectInChat\n")
+    {
+        connectInChat(data);
+    }
+    else if (msg == "__back\n")
+    {
+        disconnectInChat(data);
+    }
     else
     {
         send(data->buffer, data->nick, data->chattingWith->getClientData());
@@ -173,7 +181,7 @@ void Client::addContact(struct clientData* data)
     send("SERVER: tryAddContact\n", data);
     string choseNick = readFrom(data);
     cout << endl;
-    if (Server::addContact(choseNick, data->nick))
+    if (choseNick != data->nick && Server::addContact(choseNick, data->nick))
     {
         send("SERVER: contactAdded\n", data);
     }
@@ -196,6 +204,28 @@ void Client::eraseContact(struct clientData* data)
     {
         send("SERVER: contact was not erased\n", data);
     }
+}
+
+void Client::connectInChat(struct clientData* data)
+{
+    send("SERVER: tryConnectInChat\n", data);
+    string choseNick = readFrom(data);
+    cout << endl;
+    if (Server::hasContact(choseNick, data->nick))
+    {
+        data->chattingWith = Server::findClientByNick(choseNick);
+        send("SERVER: connectedInChat\n", data);
+    }
+    else
+    {
+        send("SERVER: contact was not erased\n", data);
+    }
+}
+
+void Client::disconnectInChat(struct clientData* data)
+{
+    send("SERVER: tryDisconnectInChat\n", data);
+    data->chattingWith = nullptr;
 }
 
 void Client::send(char msg[256], string fromNick, struct clientData* toClient)

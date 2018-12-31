@@ -42,6 +42,8 @@ private:
     static void getContacts(struct clientData* data);
     static void addContact(struct clientData* data);
     static void eraseContact(struct clientData* data);
+    static void connectInChat(struct clientData* data);
+    static void disconnectInChat(struct clientData* data);
     static void send(char msg[256], string fromNick, struct clientData* toClient);
     static void send(string msg, struct clientData* toClient);
     static void readNickAndPassword(string& nick, string& password, struct clientData* data);

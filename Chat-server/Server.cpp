@@ -96,25 +96,53 @@ void Server::deleteAccount(string nick)
 string Server::getContacts(string nick)
 {
     string contacts;
-    return FileHandler::read(nick.append(contactsFile), contacts)
+    return FileHandler::read(nick.append(contactsFile), contacts) && contacts != ""
             ? contacts
             : "You do not have any contacts.\n";
 }
 
-bool Server::addContact(string choseNick, string nick)
+bool Server::addContact(string choseNick, string toNick)
 {
-    if (isRegistered(choseNick) && !hasContact(choseNick, nick))
+    if (isRegistered(choseNick) && !hasContact(choseNick, toNick))
     {
-        writeContact(choseNick, nick);
-        writeContact(nick, choseNick);
+        writeContact(choseNick, toNick);
+        writeContact(toNick, choseNick);
         return true;
     }
     return false;
 }
 
-bool Server::eraseContact(string choseNick, string nick)
+bool Server::hasContact(string choseNick, string inNick)
 {
-    return removeContact(choseNick, nick) && removeContact(nick, choseNick);
+    vector<string> contacts;
+    if (FileHandler::readLines(inNick.append(contactsFile), contacts))
+    {
+        for (string contactNick : contacts)
+        {
+            if (contactNick == choseNick)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool Server::eraseContact(string choseNick, string fromNick)
+{
+    return removeContact(choseNick, fromNick) && removeContact(fromNick, choseNick);
+}
+
+Client* Server::findClientByNick(string nick)
+{
+    for (Client* cl : clients)
+    {
+        if (cl->getClientData()->nick == nick)
+        {
+            return cl;
+        }
+    }
+    return nullptr;
 }
 
 bool Server::isRunning()
@@ -243,37 +271,9 @@ string Server::passwordOf(string nick)
     return string("");
 }
 
-Client* Server::findClientByNick(string nick)
+void Server::writeContact(string choseNick, string toNick)
 {
-    for (Client* cl : clients)
-    {
-        if (cl->getClientData()->nick == nick)
-        {
-            return cl;
-        }
-    }
-    return nullptr;
-}
-
-bool Server::hasContact(string choseNick, string nick)
-{
-    vector<string> contacts;
-    if (FileHandler::readLines(nick.append(contactsFile), contacts))
-    {
-        for (string contactNick : contacts)
-        {
-            if (contactNick == choseNick)
-            {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-void Server::writeContact(string choseNick, string nick)
-{
-    FileHandler::append(nick.append(contactsFile), choseNick + "\n");
+    FileHandler::append(toNick.append(contactsFile), choseNick + "\n");
 }
 
 bool Server::removeContact(string choseNick, string fromNick)

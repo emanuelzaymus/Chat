@@ -3,6 +3,7 @@
 int Client::sockfd = 0;
 char Client::buffer[256] = {0};
 bool Client::running = true;
+bool Client::runningWritting = false;
 pthread_t Client::reading;
 pthread_t Client::writing;
 
@@ -44,7 +45,6 @@ Client::Client(const char* hostName, int port)
 Client::~Client()
 {
     pthread_join(reading, NULL); // maybie at the and of run()
-    pthread_join(writing, NULL); // maybie at the and of run()
     close(sockfd);
 }
 
@@ -55,9 +55,15 @@ void Client::run()
     startMenu();
 }
 
-void Client::runWritting() // todo call somewhere !!!
+void Client::runWritting()
 {
+    runningWritting = true;
     pthread_create(&writing, NULL, &writeMsgs, NULL);
+}
+
+void Client::stopWritting()
+{
+    pthread_join(writing, NULL);
 }
 
 void* Client::readMsgs(void* ptr)
@@ -73,7 +79,7 @@ void* Client::readMsgs(void* ptr)
 void* Client::writeMsgs(void* ptr)
 {
     string s;
-    while (running)
+    while (running && runningWritting)
     {
         s = readln();
         s.append("\n\0");
@@ -135,11 +141,13 @@ void Client::deleteAccount()
 void Client::getContacts(bool wasMistake)
 {
     writeToServer("__getContacts\n");
-    contactsMenu(readFromServer(), wasMistake);
+    contactsMenu(readFromServer(), wasMistake); // todo: should not be like this, 
+    // do not call getContacts(wasMistake); but contactsMenu(wasMistake);
 }
 
 void Client::contactsMenu(string contacts, bool wasMistake)
 {
+    //    switch (CLI::contactsMenu(getContacts(), choseNick, wasMistake))
     switch (CLI::contactsMenu(contacts, choseNick, wasMistake))
     {
     case addContactChoice:
@@ -149,7 +157,7 @@ void Client::contactsMenu(string contacts, bool wasMistake)
         eraseContact();
         break;
     case startChatChoice:
-        //        chat(choseNick);
+        connectInChat();
         break;
     default:
         loggedInMenu();
@@ -177,6 +185,36 @@ void Client::tryEraseContact()
 {
     writeToServer(choseNick);
     getContacts(readFromServer() != "SERVER: contactErased\n");
+}
+
+void Client::connectInChat()
+{
+    writeToServer("__connectInChat\n");
+}
+
+void Client::tryConnectInChat()
+{
+    writeToServer(choseNick);
+    if (readFromServer() == "SERVER: connectedInChat\n")
+    {
+        startChat();
+    }
+    else
+    {
+        getContacts(true);
+    }
+}
+
+void Client::startChat()
+{
+    CLI::chat(choseNick, ""/*getConversation(choseNick)*/);
+    runWritting();
+}
+
+void Client::tryDisconnectInChat()
+{
+    stopWritting();
+    getContacts(false);
 }
 
 void Client::signIn()
@@ -256,6 +294,11 @@ void Client::writeToServer(string str)
     bzero(buffer, 256);
     strcpy(buffer, str.c_str());
     writeToServer();
+    
+    if (str == "__back\n")
+    {
+        runningWritting = false;
+    }
 
     //    cout << "client - end writing: " << endl;
 
@@ -312,6 +355,14 @@ void Client::readFromServerWithCheck()
         else if (msgFromServer == "SERVER: tryEraseContact\n")
         {
             tryEraseContact();
+        }
+        else if (msgFromServer == "SERVER: tryConnectInChat\n")
+        {
+            tryConnectInChat();
+        }
+        else if (msgFromServer == "SERVER: tryDisconnectInChat\n")
+        {
+            tryDisconnectInChat();
         }
     }
 

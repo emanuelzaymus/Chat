@@ -27,6 +27,7 @@ private:
     static int sockfd;
     static char buffer[256];
     static bool running;
+    static bool runningWritting;
     static pthread_t reading;
     static pthread_t writing;
 
@@ -39,6 +40,8 @@ private:
     struct sockaddr_in serv_addr;
     struct hostent* server;
 
+    static void runWritting();
+    static void stopWritting();
     static void* readMsgs(void* ptr);
     static void* writeMsgs(void* ptr);
     static void disconnect();
@@ -57,12 +60,15 @@ private:
     static void tryAddContact();
     static void eraseContact();
     static void tryEraseContact();
+    static void connectInChat();
+    static void tryConnectInChat();
+    static void startChat();
+    static void tryDisconnectInChat();
     static void logIn();
     static void tryLogIn();
     static void signIn();
     static void trySignIn();
     static void sendNickAndPassword(string nick, string password);
-    void runWritting();
 
 };
 

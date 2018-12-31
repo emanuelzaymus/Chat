@@ -142,6 +142,14 @@ ContactsMenuChoice CLI::contactsMenu(string contacts, string& choseNick, bool wa
     }
 }
 
+void CLI::chat(string withNick, string msgs)
+{
+    clearScreen();
+    cout << "To end chat type: \"__back\"" << endl;
+    cout << "CHAT with: " << withNick << endl;
+    cout << msgs << flush;
+}
+
 void CLI::clearScreen()
 {
     system("clear");

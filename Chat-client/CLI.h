@@ -35,6 +35,7 @@ public:
     static void logIn(string& nick, string& password, bool repeated);
     static LoggedInMenuChoice loggedInMenu();
     static ContactsMenuChoice contactsMenu(string contacts, string& choseNick, bool wasMistake);
+    static void chat(string withNick, string msgs);
 
 private:
     static void clearScreen();

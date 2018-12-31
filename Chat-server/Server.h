@@ -30,7 +30,9 @@ public:
     static void deleteAccount(string nick);
     static string getContacts(string nick);
     static bool addContact(string choseNick, string toNick);
+    static bool hasContact(string chosenNick, string inNick);
     static bool eraseContact(string choseNick, string fromNick);
+    static Client* findClientByNick(string nick);
     static bool isRunning();
 
 private:
@@ -55,8 +57,6 @@ private:
     static void registerClient(string nick, string password);
     static bool isRegistered(string nick);
     static string passwordOf(string nick);
-    static Client* findClientByNick(string nick);
-    static bool hasContact(string chosenNick, string inNick);
     static void writeContact(string choseNick, string toNick);
     static bool removeContact(string choseNick, string fromNick);
     static bool eraseLineFromFile(string line, string path, bool eraseTwoLines);
