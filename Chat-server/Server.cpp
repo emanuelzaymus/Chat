@@ -1,7 +1,6 @@
 #include <stddef.h>
 
 #include "Server.h"
-#include "FileHandler.h"
 
 const string registeredFilePath = "registered.txt";
 const string contactsFile = "_contacts.txt";
@@ -12,6 +11,7 @@ socklen_t Server::cli_len = 0;
 struct sockaddr_in Server::cli_addr = {0};
 vector<Client*> Server::clients;
 bool Server::running = true;
+FileHandler Server::fh;
 
 Server::Server(int port)
 {
@@ -84,7 +84,7 @@ void Server::deleteAccount(string nick)
     eraseLineFromFile(nick, registeredFilePath, true);
     vector<string> contacts;
     string path = contactsFilePath(nick);
-    FileHandler::readLines(path, contacts);
+    fh.readLines(path, contacts);
     for (auto c : contacts)
     {
         removeContact(nick, c);
@@ -96,10 +96,8 @@ void Server::deleteAccount(string nick)
 
 string Server::getContacts(string nick)
 {
-    string contacts;
-    return FileHandler::read(contactsFilePath(nick), contacts) && contacts != ""
-            ? contacts
-            : "You do not have any contacts.\n";
+    string contacts = fh.read(contactsFilePath(nick));
+    return contacts != "" ? contacts : "You do not have any contacts.\n";
 }
 
 bool Server::addContact(string choseNick, string toNick)
@@ -116,7 +114,7 @@ bool Server::addContact(string choseNick, string toNick)
 bool Server::hasContact(string choseNick, string inNick)
 {
     vector<string> contacts;
-    if (FileHandler::readLines(contactsFilePath(inNick), contacts))
+    if (fh.readLines(contactsFilePath(inNick), contacts))
     {
         for (string contactNick : contacts)
         {
@@ -148,12 +146,12 @@ Client* Server::findClientByNick(string nick)
 
 string Server::getConversation(string nick, string chattingWithNick)
 {
-    return FileHandler::read(getConversationFilePath(nick, chattingWithNick));
+    return fh.read(getConversationFilePath(nick, chattingWithNick));
 }
 
 void Server::writeToConversation(string msg, string nick, string chattingWithNick)
 {
-    FileHandler::append(getConversationFilePath(nick, chattingWithNick), msg);
+    fh.append(getConversationFilePath(nick, chattingWithNick), msg);
 }
 
 void Server::stopClient(string nick)
@@ -211,14 +209,14 @@ void* Server::readConsole(void* ptr)
             string file;
             cin >> file;
             file += ".txt";
-            cout << FileHandler::read(file);
+            cout << fh.read(file);
         }
         else if (command == "remove")
         {
             string file;
             cin >> file;
             file += ".txt";
-            cout << FileHandler::read(file);
+            cout << fh.read(file);
             remove(file.c_str());
         }
     }
@@ -273,7 +271,7 @@ void Server::connectLastClient()
 
 void Server::registerClient(string nick, string password)
 {
-    FileHandler::append(registeredFilePath, nick + "\n" + password + "\n");
+    fh.append(registeredFilePath, nick + "\n" + password + "\n");
 }
 
 bool Server::isRegistered(string nick)
@@ -284,7 +282,7 @@ bool Server::isRegistered(string nick)
 string Server::passwordOf(string nick)
 {
     vector<string> registered;
-    FileHandler::readLines(registeredFilePath, registered);
+    fh.readLines(registeredFilePath, registered);
 
     for (int i = 0; i < registered.size(); i += 2)
     {
@@ -298,7 +296,7 @@ string Server::passwordOf(string nick)
 
 void Server::writeContact(string choseNick, string toNick)
 {
-    FileHandler::append(contactsFilePath(toNick), choseNick + "\n");
+    fh.append(contactsFilePath(toNick), choseNick + "\n");
 }
 
 bool Server::removeContact(string choseNick, string fromNick)
@@ -309,7 +307,7 @@ bool Server::removeContact(string choseNick, string fromNick)
 bool Server::eraseLineFromFile(string lineToErase, string path, bool eraseTwoLines)
 {
     vector<string> lines;
-    if (FileHandler::readLines(path, lines))
+    if (fh.readLines(path, lines))
     {
         for (int i = 0; i < lines.size(); i++)
         {
@@ -320,7 +318,7 @@ bool Server::eraseLineFromFile(string lineToErase, string path, bool eraseTwoLin
                 {
                     lines.erase(lines.begin() + i);
                 }
-                FileHandler::write(path, lines);
+                fh.write(path, lines);
                 return true;
             }
         }

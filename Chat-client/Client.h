@@ -25,15 +25,15 @@ public:
 
 private:
     static int sockfd;
-    static char buffer[2048];
+    static char bufferIn[2048];
+    static char bufferOut[2048];
     static bool running;
     static bool runningWritting;
     static pthread_t reading;
     static pthread_t writing;
 
-    static pthread_mutex_t mutex;
-    static pthread_cond_t cond;
-    static bool isLocked;
+    static pthread_mutex_t mutexReading;
+    static pthread_mutex_t mutexWritting;
     
     static bool repeatedLogging;
     static string choseNick;

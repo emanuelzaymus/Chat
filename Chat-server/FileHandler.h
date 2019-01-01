@@ -5,20 +5,26 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <pthread.h>
 
 using namespace std;
 
 class FileHandler {
 public:
-    static void append(const string path, const string & text);
-    static void write(const string path, const string & text);
-    static void write(const string path, const vector<string>& vctr);
-    static bool read(const string path, string& ret);
-    static string read(const string path);
-    static bool readLines(const string path, vector<string>& lines);
+    FileHandler();
+    virtual ~FileHandler();
+
+    void append(const string path, const string & text);
+    void write(const string path, const vector<string>& vctr);
+    string read(const string path);
+    bool readLines(const string path, vector<string>& lines);
 
 private:
-    static string toString(const vector<string>& vctr);
+    pthread_mutex_t mutex;
+
+    void write(const string path, const string & text, bool append);
+    bool read(const string path, string& ret);
+    string toString(const vector<string>& vctr);
 
 };
 

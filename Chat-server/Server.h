@@ -16,6 +16,7 @@
 #include <memory>
 
 #include "Client.h"
+#include "FileHandler.h"
 
 using namespace std;
 
@@ -45,6 +46,7 @@ private:
     static struct sockaddr_in cli_addr;
     static vector<Client*> clients;
     static bool running;
+    static FileHandler fh;
 
     struct sockaddr_in serv_addr;
     pthread_t consoleReader;

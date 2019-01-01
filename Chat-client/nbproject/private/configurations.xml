@@ -32,10 +32,10 @@
           <runcommandpicklistitem>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1044</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1045</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1048</runcommandpicklistitem>
-          <runcommandpicklistitem>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1046</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1047</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1046</runcommandpicklistitem>
         </runcommandpicklist>
-        <runcommand>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1047</runcommand>
+        <runcommand>"${OUTPUT_PATH}" "frios2.fri.uniza.sk" 1046</runcommand>
         <rundir></rundir>
         <buildfirst>true</buildfirst>
         <terminal-type>0</terminal-type>

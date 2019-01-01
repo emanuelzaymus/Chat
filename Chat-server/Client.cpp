@@ -46,11 +46,12 @@ void* Client::service(void* ptr)
 {
     struct clientData* data = (struct clientData*) ptr;
 
+    int id = data->id;
     while (Server::isRunning() && data->runningThreads)
     {
         readWithCheckFrom(data);
     }
-    cout << "SERVER - Ended service for client " << data->id << endl;
+    cout << "SERVER - Ended service for client " << id << endl;
     return nullptr;
 }
 

@@ -3,15 +3,15 @@
 const int bufferSize = 2048;
 
 int Client::sockfd = 0;
-char Client::buffer[bufferSize] = {0};
+char Client::bufferIn[bufferSize] = {0};
+char Client::bufferOut[bufferSize] = {0};
 bool Client::running = true;
 bool Client::runningWritting = false;
 pthread_t Client::reading;
 pthread_t Client::writing;
 
-pthread_mutex_t Client::mutex;
-pthread_cond_t Client::cond;
-bool Client::isLocked = false;
+pthread_mutex_t Client::mutexReading;
+pthread_mutex_t Client::mutexWritting;
 
 bool Client::repeatedLogging = false;
 string Client::choseNick = "";
@@ -43,10 +43,16 @@ Client::Client(const char* hostName, int port)
     {
         perror("Error connecting to socket");
     }
+
+    pthread_mutex_init(&mutexReading, NULL);
+    pthread_mutex_init(&mutexWritting, NULL);
 }
 
 Client::~Client()
 {
+    pthread_mutex_destroy(&mutexReading);
+    pthread_mutex_destroy(&mutexWritting);
+
     close(sockfd);
 }
 
@@ -284,7 +290,7 @@ void Client::sendNickAndPassword(string nick, string password)
 
 void Client::writeToServer()
 {
-    int n = write(sockfd, buffer, strlen(buffer));
+    int n = write(sockfd, bufferOut, strlen(bufferOut));
     if (n < 0)
     {
         perror("Error writing to socket");
@@ -293,17 +299,10 @@ void Client::writeToServer()
 
 void Client::writeToServer(string str)
 {
-    pthread_mutex_lock(&mutex);
-    if (isLocked)
-    {
-        cout << "   writing waiting" << endl;
-        pthread_cond_wait(&cond, &mutex);
-    }
-    isLocked = true;
-    cout << "client - writing: " << endl;
+    pthread_mutex_lock(&mutexWritting);
 
-    bzero(buffer, bufferSize);
-    strcpy(buffer, str.c_str());
+    bzero(bufferOut, bufferSize);
+    strcpy(bufferOut, str.c_str());
     writeToServer();
 
     if (str == "__back")
@@ -311,10 +310,7 @@ void Client::writeToServer(string str)
         runningWritting = false;
     }
 
-    cout << "client - end writing" << endl;
-    isLocked = false;
-    pthread_mutex_unlock(&mutex);
-    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&mutexWritting);
 }
 
 string Client::readln()
@@ -326,14 +322,7 @@ string Client::readln()
 
 void Client::readFromServerWithCheck()
 {
-    pthread_mutex_lock(&mutex);
-    if (isLocked)
-    {
-        cout << "   reading waiting" << endl;
-        pthread_cond_wait(&cond, &mutex);
-    }
-    isLocked = true;
-    cout << "client reading: " << endl;
+    pthread_mutex_lock(&mutexReading);
 
     string msgFromServer = readFromServer();
 
@@ -345,22 +334,19 @@ void Client::readFromServerWithCheck()
     else if (msgFromServer == "SERVER: tryConnectInChat") tryConnectInChat();
     else if (msgFromServer == "SERVER: tryDisconnectInChat") tryDisconnectInChat();
 
-    cout << "client end reading" << endl;
-    isLocked = false;
-    pthread_mutex_unlock(&mutex);
-    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&mutexReading);
 }
 
 string Client::readFromServer()
 {
-    bzero(buffer, bufferSize);
-    int n = read(sockfd, buffer, bufferSize - 1);
+    bzero(bufferIn, bufferSize);
+    int n = read(sockfd, bufferIn, bufferSize - 1);
     if (n < 0)
     {
         perror("Error reading from socket");
     }
-    cout << buffer << endl;
+    cout << bufferIn << endl;
 
-    return string(buffer);
+    return string(bufferIn);
 }
 
