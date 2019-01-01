@@ -53,7 +53,6 @@ bool FileHandler::readLines(const string path, vector<string>& lines)
 
     string str;
     while (getline(inFile, str))
-        //    while (inFile >> str)
     {
         if (str.size() > 0)
         {

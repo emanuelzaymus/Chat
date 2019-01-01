@@ -35,12 +35,10 @@ public:
     static Client* findClientByNick(string nick);
     static string getConversation(string nick, string chattingWithNick);
     static void writeToConversation(string msg, string nick, string chattingWithNick);
+    static void stopClient(string nick);
     static bool isRunning();
 
 private:
-    //    static const string refisteredFile; // todo: delete
-    //    static const string contactsFile;
-
     static int port;
     static int sockfd;
     static socklen_t cli_len;

@@ -2,6 +2,8 @@
 
 #include "Server.h"
 
+const int bufferSize = 2048;
+
 int Client::maxId = 0;
 
 Client::Client(const int socket)
@@ -56,67 +58,29 @@ void Client::readWithCheckFrom(struct clientData* data)
 {
     string msg = readFrom(data);
 
-    //synchronization of reading msgs
-    //    cout << "before sending received" << endl;
-    //    send("SERVER: received\n", data);
-    //    cout << "after sending received" << endl;
-
-    if (msg == "__end\n")
-    {
-        stop(data);
-    }
-    else if (msg == "__signIn\n")
-    {
-        signIn(data);
-    }
-    else if (msg == "__logIn\n")
-    {
-        logIn(data);
-    }
-    else if (msg == "__deleteAccount\n")
-    {
-        deleteAccount(data);
-    }
-    else if (msg == "__getContacts\n")
-    {
-        getContacts(data);
-    }
-    else if (msg == "__addContact\n")
-    {
-        addContact(data);
-    }
-    else if (msg == "__eraseContact\n")
-    {
-        eraseContact(data);
-    }
-    else if (msg == "__connectInChat\n")
-    {
-        connectInChat(data);
-    }
-    else if (msg == "__getConversation\n")
-    {
-        getConversation(data);
-    }
-    else if (msg == "__back")
-    {
-        disconnectInChat(data);
-    }
-    else
-    {
-        deliver(data->buffer, data->nick, data->chattingWith->clientData);
-    }
+    if (msg == "__end") stop(data);
+    else if (msg == "__signIn") signIn(data);
+    else if (msg == "__logIn") logIn(data);
+    else if (msg == "__deleteAccount") deleteAccount(data);
+    else if (msg == "__getContacts") getContacts(data);
+    else if (msg == "__addContact") addContact(data);
+    else if (msg == "__eraseContact") eraseContact(data);
+    else if (msg == "__connectInChat") connectInChat(data);
+    else if (msg == "__getConversation") getConversation(data);
+    else if (msg == "__back") disconnectInChat(data);
+    else deliver(data->buffer, data, data->chattingWithNick);
 }
 
 string Client::readFrom(struct clientData* data)
 {
-    bzero(data->buffer, 256);
-    int n = read(data->socket, data->buffer, 255);
+    bzero(data->buffer, bufferSize);
+    int n = read(data->socket, data->buffer, bufferSize - 1);
     if (n < 0)
     {
         perror("Error reading from socket");
     }
 
-    cout << "Client " << data->id << ": " << data->buffer << endl; //flush;
+    cout << "Client " << data->id << ": " << data->buffer << endl;
     return string(data->buffer);
 }
 
@@ -124,49 +88,49 @@ void Client::stop(struct clientData* data)
 {
     if (data->runningThreads)
     {
-        send(string("SERVER: STOP\n"), data);
-        bzero(data->buffer, 256);
+        int id = data->id;
+        send(string("SERVER: STOP"), data);
+        bzero(data->buffer, bufferSize);
         data->runningThreads = false;
+        Server::stopClient(data->nick);
 
-        cout << "SERVER - Client " << data->id << " stopped" << endl;
+        cout << "SERVER - Client " << id << " stopped" << endl;
     }
 }
 
 void Client::signIn(struct clientData* data)
 {
-    send("SERVER: trySignIn\n", data);
+    send("SERVER: trySignIn", data);
 
-    string nick;
-    string password;
-    readNickAndPassword(nick, password, data);
+    string nick = readFrom(data);
+    string password = readFrom(data);
 
     if (Server::signIn(nick, password))
     {
         data->nick = nick;
-        send("SERVER: loggedIn\n", data);
+        send("SERVER: loggedIn", data);
     }
     else
     {
-        send("SERVER: NOT loggedIn\n", data);
+        send("SERVER: NOT loggedIn", data);
     }
 }
 
 void Client::logIn(struct clientData* data)
 {
-    send("SERVER: tryLogIn\n", data);
+    send("SERVER: tryLogIn", data);
 
-    string nick;
-    string password;
-    readNickAndPassword(nick, password, data);
+    string nick = readFrom(data);
+    string password = readFrom(data);
 
     if (Server::logIn(nick, password))
     {
         data->nick = nick;
-        send("SERVER: loggedIn\n", data);
+        send("SERVER: loggedIn", data);
     }
     else
     {
-        send("SERVER: NOT loggedIn\n", data);
+        send("SERVER: NOT loggedIn", data);
     }
 }
 
@@ -182,74 +146,72 @@ void Client::getContacts(struct clientData* data)
 
 void Client::addContact(struct clientData* data)
 {
-    send("SERVER: tryAddContact\n", data);
+    send("SERVER: tryAddContact", data);
     string choseNick = readFrom(data);
-    cout << endl;
     if (choseNick != data->nick && Server::addContact(choseNick, data->nick))
     {
-        send("SERVER: contactAdded\n", data);
+        send("SERVER: contactAdded", data);
     }
     else
     {
-        send("SERVER: contact was not added\n", data);
+        send("SERVER: contact was not added", data);
     }
 }
 
 void Client::eraseContact(struct clientData* data)
 {
-    send("SERVER: tryEraseContact\n", data);
+    send("SERVER: tryEraseContact", data);
     string choseNick = readFrom(data);
-    cout << endl;
     if (Server::eraseContact(choseNick, data->nick))
     {
-        send("SERVER: contactErased\n", data);
+        send("SERVER: contactErased", data);
     }
     else
     {
-        send("SERVER: contact was not erased\n", data);
+        send("SERVER: contact was not erased", data);
     }
 }
 
 void Client::connectInChat(struct clientData* data)
 {
-    send("SERVER: tryConnectInChat\n", data);
+    send("SERVER: tryConnectInChat", data);
     string choseNick = readFrom(data);
-    cout << endl;
     if (Server::hasContact(choseNick, data->nick))
     {
-        data->chattingWith = Server::findClientByNick(choseNick); // todo here may give nullptr
-        send("SERVER: connectedInChat\n", data);
+        data->chattingWithNick = choseNick;
+        send("SERVER: connectedInChat", data);
     }
     else
     {
-        send("SERVER: contact was not erased\n", data);
+        send("SERVER: contact was not erased", data);
     }
 }
 
 void Client::getConversation(struct clientData* data)
 {
-    send(Server::getConversation(data->nick, data->chattingWith->clientData->nick), data);
+    send(Server::getConversation(data->nick, data->chattingWithNick), data);
 }
 
 void Client::disconnectInChat(struct clientData* data)
 {
-    send("SERVER: tryDisconnectInChat\n", data);
-    data->chattingWith = nullptr;
+    send("SERVER: tryDisconnectInChat", data);
+    data->chattingWithNick = "";
 }
 
-void Client::deliver(char msg[256], string fromNick, struct clientData* toClient)
+void Client::deliver(char msg[bufferSize], struct clientData* fromClient, string toNick)
 {
-    Server::writeToConversation(string(msg) + "\n", fromNick, toClient->nick);
-    addNickToMsg(msg, fromNick);
-    Server::writeToConversation(string(msg) + "\n", toClient->nick, fromNick);
+    Server::writeToConversation(string(msg) + "\n", fromClient->nick, toNick);
+    addNickToMsg(msg, fromClient->nick);
+    Server::writeToConversation(string(msg) + "\n", toNick, fromClient->nick);
 
-    if (toClient->chattingWith->clientData->nick == fromNick)
+    Client* cl = Server::findClientByNick(toNick);
+    if (cl != nullptr && cl->clientData->chattingWithNick == fromClient->nick)
     {
-        send(msg, toClient);
+        send(msg, cl->clientData);
     }
 }
 
-void Client::send(char msg[256], struct clientData* toClient)
+void Client::send(char msg[bufferSize], struct clientData* toClient)
 {
     int n = write(toClient->socket, msg, strlen(msg) + 1);
     if (n < 0)
@@ -261,20 +223,12 @@ void Client::send(char msg[256], struct clientData* toClient)
 
 void Client::send(string msg, struct clientData* toClient)
 {
-    bzero(toClient->buffer, 256);
+    bzero(toClient->buffer, bufferSize);
     strcpy(toClient->buffer, msg.c_str());
     send(toClient->buffer, toClient);
 }
 
-void Client::readNickAndPassword(string& nick, string& password, struct clientData* data)
-{
-    nick = readFrom(data);
-    cout << endl;
-    password = readFrom(data);
-    cout << endl;
-}
-
-void Client::addNickToMsg(char msg[256], string fromNick)
+void Client::addNickToMsg(char msg[bufferSize], string fromNick)
 {
     if (fromNick != "")
     {

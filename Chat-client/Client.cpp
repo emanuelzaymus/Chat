@@ -1,7 +1,9 @@
 #include "Client.h"
 
+const int bufferSize = 2048;
+
 int Client::sockfd = 0;
-char Client::buffer[256] = {0};
+char Client::buffer[bufferSize] = {0};
 bool Client::running = true;
 bool Client::runningWritting = false;
 pthread_t Client::reading;
@@ -10,6 +12,7 @@ pthread_t Client::writing;
 pthread_mutex_t Client::mutex;
 pthread_cond_t Client::cond;
 bool Client::isLocked = false;
+
 bool Client::repeatedLogging = false;
 string Client::choseNick = "";
 
@@ -83,7 +86,6 @@ void* Client::writeMsgs(void* ptr)
     while (running && runningWritting)
     {
         s = readln();
-        //        s.append("\n\0");
         writeToServer(s);
     }
     cout << "CLIENT - Ended writing service" << endl;
@@ -93,7 +95,13 @@ void* Client::writeMsgs(void* ptr)
 void Client::disconnect()
 {
     running = false;
-    writeToServer("__end\n");
+    writeToServer("__end");
+    cout << "SERVER: Press Enter..." << endl;
+    if (runningWritting)
+    {
+        runningWritting = false;
+        stopWritting();
+    }
 }
 
 void Client::startMenu()
@@ -136,12 +144,12 @@ void Client::loggedInMenu()
 
 void Client::deleteAccount()
 {
-    writeToServer("__deleteAccount\n");
+    writeToServer("__deleteAccount");
 }
 
 string Client::getContacts()
 {
-    writeToServer("__getContacts\n");
+    writeToServer("__getContacts");
     return readFromServer();
 }
 
@@ -166,35 +174,35 @@ void Client::contactsMenu(bool wasMistake)
 
 void Client::addContact()
 {
-    writeToServer("__addContact\n");
+    writeToServer("__addContact");
 }
 
 void Client::tryAddContact()
 {
     writeToServer(choseNick);
-    contactsMenu(readFromServer() != "SERVER: contactAdded\n");
+    contactsMenu(readFromServer() != "SERVER: contactAdded");
 }
 
 void Client::eraseContact()
 {
-    writeToServer("__eraseContact\n");
+    writeToServer("__eraseContact");
 }
 
 void Client::tryEraseContact()
 {
     writeToServer(choseNick);
-    contactsMenu(readFromServer() != "SERVER: contactErased\n");
+    contactsMenu(readFromServer() != "SERVER: contactErased");
 }
 
 void Client::connectInChat()
 {
-    writeToServer("__connectInChat\n");
+    writeToServer("__connectInChat");
 }
 
 void Client::tryConnectInChat()
 {
     writeToServer(choseNick);
-    if (readFromServer() == "SERVER: connectedInChat\n")
+    if (readFromServer() == "SERVER: connectedInChat")
     {
         startChat();
     }
@@ -212,7 +220,7 @@ void Client::startChat()
 
 string Client::getConversation()
 {
-    writeToServer("__getConversation\n");
+    writeToServer("__getConversation");
     return readFromServer();
 }
 
@@ -224,7 +232,7 @@ void Client::tryDisconnectInChat()
 
 void Client::signIn()
 {
-    writeToServer("__signIn\n");
+    writeToServer("__signIn");
 }
 
 void Client::trySignIn()
@@ -235,7 +243,7 @@ void Client::trySignIn()
     CLI::signIn(nick, password, repeatedLogging);
     repeatedLogging = true;
     sendNickAndPassword(nick, password);
-    if (readFromServer() == "SERVER: loggedIn\n")
+    if (readFromServer() == "SERVER: loggedIn")
     {
         loggedInMenu();
     }
@@ -247,7 +255,7 @@ void Client::trySignIn()
 
 void Client::logIn()
 {
-    writeToServer("__logIn\n");
+    writeToServer("__logIn");
 }
 
 void Client::tryLogIn()
@@ -258,7 +266,7 @@ void Client::tryLogIn()
     CLI::logIn(nick, password, repeatedLogging);
     repeatedLogging = true;
     sendNickAndPassword(nick, password);
-    if (readFromServer() == "SERVER: loggedIn\n")
+    if (readFromServer() == "SERVER: loggedIn")
     {
         loggedInMenu();
     }
@@ -285,18 +293,16 @@ void Client::writeToServer()
 
 void Client::writeToServer(string str)
 {
-    /*pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutex);
     if (isLocked)
     {
         cout << "   writing waiting" << endl;
         pthread_cond_wait(&cond, &mutex);
-//        readFromServerWithCheck(); !!!!
     }
-    isLocked = true;*/
+    isLocked = true;
+    cout << "client - writing: " << endl;
 
-    //    cout << "client - writing: " << endl;
-
-    bzero(buffer, 256);
+    bzero(buffer, bufferSize);
     strcpy(buffer, str.c_str());
     writeToServer();
 
@@ -305,11 +311,10 @@ void Client::writeToServer(string str)
         runningWritting = false;
     }
 
-    //    cout << "client - end writing: " << endl;
-
-    //        isLocked = false;
-    //    pthread_mutex_unlock(&mutex);
-    //    pthread_cond_signal(&cond);  !!!
+    cout << "client - end writing" << endl;
+    isLocked = false;
+    pthread_mutex_unlock(&mutex);
+    pthread_cond_signal(&cond);
 }
 
 string Client::readln()
@@ -321,70 +326,40 @@ string Client::readln()
 
 void Client::readFromServerWithCheck()
 {
-    //        pthread_mutex_lock(&mutex);
-    //        if (isLocked)
-    //        {
-    //            cout << "   reading waiting" << endl;
-    //            pthread_cond_wait(&cond, &mutex);
-    //        }
-    //        isLocked = true;
-
-    //    cout << "client reading: " << endl;
+    pthread_mutex_lock(&mutex);
+    if (isLocked)
+    {
+        cout << "   reading waiting" << endl;
+        pthread_cond_wait(&cond, &mutex);
+    }
+    isLocked = true;
+    cout << "client reading: " << endl;
 
     string msgFromServer = readFromServer();
 
-    if (msgFromServer == "SERVER: STOP\n")
-    {
-        disconnect();
-        cout << "SERVER: Press Enter..." << endl;
-    }
-        //        else if (msgFromServer == "SERVER: received\n") // todo IS NOT NECESSARY NOW !!!
-        //        {
-        //        cout << "in readWithCheck - if received" << endl;
-        //        isLocked = false;
-        //        pthread_cond_signal(&cond);
-        //        }
-    else if (msgFromServer == "SERVER: tryLogIn\n")
-    {
-        tryLogIn();
-    }
-    else if (msgFromServer == "SERVER: trySignIn\n")
-    {
-        trySignIn();
-    }
-    else if (msgFromServer == "SERVER: tryAddContact\n")
-    {
-        tryAddContact();
-    }
-    else if (msgFromServer == "SERVER: tryEraseContact\n")
-    {
-        tryEraseContact();
-    }
-    else if (msgFromServer == "SERVER: tryConnectInChat\n")
-    {
-        tryConnectInChat();
-    }
-    else if (msgFromServer == "SERVER: tryDisconnectInChat\n")
-    {
-        tryDisconnectInChat();
-    }
+    if (msgFromServer == "SERVER: STOP") disconnect();
+    else if (msgFromServer == "SERVER: tryLogIn") tryLogIn();
+    else if (msgFromServer == "SERVER: trySignIn") trySignIn();
+    else if (msgFromServer == "SERVER: tryAddContact") tryAddContact();
+    else if (msgFromServer == "SERVER: tryEraseContact") tryEraseContact();
+    else if (msgFromServer == "SERVER: tryConnectInChat") tryConnectInChat();
+    else if (msgFromServer == "SERVER: tryDisconnectInChat") tryDisconnectInChat();
 
-    //    cout << "client end reading: " << endl;
-
-    //        isLocked = false;
-    //        pthread_mutex_unlock(&mutex);
-    //        pthread_cond_signal(&cond);
+    cout << "client end reading" << endl;
+    isLocked = false;
+    pthread_mutex_unlock(&mutex);
+    pthread_cond_signal(&cond);
 }
 
 string Client::readFromServer()
 {
-    bzero(buffer, 256);
-    int n = read(sockfd, buffer, 255);
+    bzero(buffer, bufferSize);
+    int n = read(sockfd, buffer, bufferSize - 1);
     if (n < 0)
     {
         perror("Error reading from socket");
     }
-    cout << buffer << endl; //flush;
+    cout << buffer << endl;
 
     return string(buffer);
 }

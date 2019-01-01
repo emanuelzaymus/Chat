@@ -146,7 +146,7 @@ void CLI::chat(string withNick, string msgs)
 {
     clearScreen();
     cout << "To end chat type: \"__back\"" << endl;
-    cout << "CHAT with: " << withNick << endl;
+    cout << "CHAT with: " << withNick << endl << endl;
     cout << msgs << flush;
 }
 

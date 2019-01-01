@@ -22,7 +22,6 @@ class Client {
 public:
     Client(const int socket);
     virtual ~Client();
-
     struct clientData* getClientData();
 
     static void stop(struct clientData* data);
@@ -45,11 +44,10 @@ private:
     static void connectInChat(struct clientData* data);
     static void getConversation(struct clientData* data);
     static void disconnectInChat(struct clientData* data);
-    static void deliver(char msg[256], string fromNick, struct clientData* toClient);
-    static void send(char msg[256], struct clientData* toClient);
+    static void deliver(char msg[2048], struct clientData* fromClient, string toNick);
+    static void send(char msg[2048], struct clientData* toClient);
     static void send(string msg, struct clientData* toClient);
-    static void readNickAndPassword(string& nick, string& password, struct clientData* data);
-    static void addNickToMsg(char msg[256], string fromNick);
+    static void addNickToMsg(char msg[2048], string fromNick);
 
 };
 
@@ -57,11 +55,11 @@ struct clientData {
     int socket;
     int id;
     string nick = "";
-    char buffer[256] = "";
+    char buffer[2048] = "";
     bool runningThreads = true;
     pthread_t reading;
     pthread_t running;
-    Client* chattingWith;
+    string chattingWithNick;
 };
 
 #endif /* CLIENT_H */

@@ -156,6 +156,20 @@ void Server::writeToConversation(string msg, string nick, string chattingWithNic
     FileHandler::append(getConversationFilePath(nick, chattingWithNick), msg);
 }
 
+void Server::stopClient(string nick)
+{
+    Client* cl;
+    for (int i = 0; i < clients.size(); i++)
+    {
+        if (clients.at(i)->getClientData()->nick == nick)
+        {
+            delete clients.at(i);
+            clients.erase(clients.begin() + i);
+            return;
+        }
+    }
+}
+
 bool Server::isRunning()
 {
     return running;
@@ -316,10 +330,6 @@ bool Server::eraseLineFromFile(string lineToErase, string path, bool eraseTwoLin
 
 string Server::getConversationFilePath(string nick, string chattingWithNick)
 {
-    //    if (nick > chattingWithNick)
-    //    {
-    //        nick.swap(chattingWithNick);
-    //    }
     return nick.append("_").append(chattingWithNick).append(".txt");
 }
 

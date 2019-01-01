@@ -25,7 +25,7 @@ public:
 
 private:
     static int sockfd;
-    static char buffer[256];
+    static char buffer[2048];
     static bool running;
     static bool runningWritting;
     static pthread_t reading;
@@ -34,6 +34,7 @@ private:
     static pthread_mutex_t mutex;
     static pthread_cond_t cond;
     static bool isLocked;
+    
     static bool repeatedLogging;
     static string choseNick;
 
