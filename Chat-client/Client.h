@@ -28,12 +28,12 @@ private:
     static char bufferIn[2048];
     static char bufferOut[2048];
     static bool running;
-    static bool runningWritting;
+    static bool runningWriting;
     static pthread_t reading;
     static pthread_t writing;
 
     static pthread_mutex_t mutexReading;
-    static pthread_mutex_t mutexWritting;
+    static pthread_mutex_t mutexWriting;
     
     static bool repeatedLogging;
     static string choseNick;

@@ -6,12 +6,12 @@ int Client::sockfd = 0;
 char Client::bufferIn[bufferSize] = {0};
 char Client::bufferOut[bufferSize] = {0};
 bool Client::running = true;
-bool Client::runningWritting = false;
+bool Client::runningWriting = false;
 pthread_t Client::reading;
 pthread_t Client::writing;
 
 pthread_mutex_t Client::mutexReading;
-pthread_mutex_t Client::mutexWritting;
+pthread_mutex_t Client::mutexWriting;
 
 bool Client::repeatedLogging = false;
 string Client::choseNick = "";
@@ -45,13 +45,13 @@ Client::Client(const char* hostName, int port)
     }
 
     pthread_mutex_init(&mutexReading, NULL);
-    pthread_mutex_init(&mutexWritting, NULL);
+    pthread_mutex_init(&mutexWriting, NULL);
 }
 
 Client::~Client()
 {
     pthread_mutex_destroy(&mutexReading);
-    pthread_mutex_destroy(&mutexWritting);
+    pthread_mutex_destroy(&mutexWriting);
 
     close(sockfd);
 }
@@ -67,7 +67,7 @@ void Client::run()
 
 void Client::runWritting()
 {
-    runningWritting = true;
+    runningWriting = true;
     pthread_create(&writing, NULL, &writeMsgs, NULL);
 }
 
@@ -89,7 +89,7 @@ void* Client::readMsgs(void* ptr)
 void* Client::writeMsgs(void* ptr)
 {
     string s;
-    while (running && runningWritting)
+    while (running && runningWriting)
     {
         s = readln();
         writeToServer(s);
@@ -103,9 +103,9 @@ void Client::disconnect()
     running = false;
     writeToServer("__end");
     cout << "SERVER: Press Enter..." << endl;
-    if (runningWritting)
+    if (runningWriting)
     {
-        runningWritting = false;
+        runningWriting = false;
         stopWritting();
     }
 }
@@ -299,7 +299,7 @@ void Client::writeToServer()
 
 void Client::writeToServer(string str)
 {
-    pthread_mutex_lock(&mutexWritting);
+    pthread_mutex_lock(&mutexWriting);
 
     bzero(bufferOut, bufferSize);
     strcpy(bufferOut, str.c_str());
@@ -307,10 +307,10 @@ void Client::writeToServer(string str)
 
     if (str == "__back")
     {
-        runningWritting = false;
+        runningWriting = false;
     }
 
-    pthread_mutex_unlock(&mutexWritting);
+    pthread_mutex_unlock(&mutexWriting);
 }
 
 string Client::readln()
